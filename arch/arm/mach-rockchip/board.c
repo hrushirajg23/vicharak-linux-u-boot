@@ -1173,6 +1173,58 @@ char *board_fdt_chosen_bootargs(void *fdt)
 		}
 	}
 #endif
+}
+
+static void bootargs_add_dtb_dtbo(void *fdt, bool verbose)
+{
+	/* bootargs_ext is used when dtbo is applied. */
+	const char *arr_bootargs[] = { "bootargs", "bootargs_ext" };
+	const char *bootargs;
+	char *msg = "kernel";
+	int i, noffset;
+
+	/* find or create "/chosen" node. */
+	noffset = fdt_find_or_add_subnode(fdt, 0, "chosen");
+	if (noffset < 0)
+		return;
+
+	for (i = 0; i < ARRAY_SIZE(arr_bootargs); i++) {
+		bootargs = fdt_getprop(fdt, noffset, arr_bootargs[i], NULL);
+		if (!bootargs)
+			continue;
+		if (verbose)
+			printf("## bootargs(%s-%s): %s\n\n",
+			       msg, arr_bootargs[i], bootargs);
+		/*
+		 * Append kernel bootargs
+		 * If use AB system, delete default "root=" which route
+		 * to rootfs. Then the ab bootctl will choose the
+		 * high priority system to boot and add its UUID
+		 * to cmdline. The format is "roo=PARTUUID=xxxx...".
+		 */
+#ifdef CONFIG_ANDROID_AB
+		env_update_filter("bootargs", bootargs, "root=");
+#else
+		env_update("bootargs", bootargs);
+#endif
+	}
+}
+
+char *board_fdt_chosen_bootargs(void *fdt)
+{
+	int verbose = is_hotkey(HK_CMDLINE);
+	const char *bootargs;
+
+	/* debug */
+	hotkey_run(HK_INITCALL);
+	if (verbose)
+		printf("## bootargs(u-boot): %s\n\n", env_get("bootargs"));
+
+	bootargs_add_dtb_dtbo(fdt, verbose);
+	bootargs_add_partition(verbose);
+	bootargs_add_fwver(verbose);
+	bootargs_add_android(verbose);
+
 	/*
 	 * Initrd fixup: remove unused "initrd=0x...,0x...",
 	 * this for compatible with legacy parameter.txt
