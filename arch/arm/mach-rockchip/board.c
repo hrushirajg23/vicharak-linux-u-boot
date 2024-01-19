@@ -53,12 +53,6 @@
 #ifdef CONFIG_ROCKCHIP_EINK_DISPLAY
 #include <rk_eink.h>
 #endif
-
-#ifdef CONFIG_SERDES_DISPLAY
-#include <serdes-display-core.h>
-#include <serdes-display-gpio.h>
-#endif
-
 #ifdef CONFIG_ROCKCHIP_MINIDUMP
 #include <rk_mini_dump.h>
 #endif
@@ -542,9 +536,6 @@ int board_init(void)
 #ifdef CONFIG_ANDROID_AB
 	if (ab_decrease_tries())
 		printf("Decrease ab tries count fail!\n");
-#endif
-#ifdef CONFIG_SERDES_DISPLAY
-	serdes_power_init();
 #endif
 	return rk_board_init();
 }
