@@ -1099,6 +1099,11 @@ char *board_fdt_chosen_bootargs(void *fdt)
 	int nodeoffset;
 	int i, dump;
 	char *msg = "kernel";
+#ifdef CONFIG_DM_RNG
+	struct udevice *dev;
+#endif
+	size_t len = 32;
+	u8 *data;
 
 	/* debug */
 	hotkey_run(HK_INITCALL);
@@ -1125,6 +1130,94 @@ char *board_fdt_chosen_bootargs(void *fdt)
 		 * high priority system to boot and add its UUID
 		 * to cmdline. The format is "roo=PARTUUID=xxxx...".
 		 */
+#ifdef CONFIG_DM_RNG
+	if (uclass_get_device(UCLASS_RNG, 0, &dev) || dm_rng_read(dev, data, len))
+#endif
+	{
+		printf("board seed: Pseudo\n");
+		for (i = 0; i < len; i++)
+			data[i] = (u8)rand();
+	}
+
+	abuf_init_set(buf, data, len);
+
+	return 0;
+}
+
+/*
+ * Pass fwver when any available.
+ */
+static void bootargs_add_fwver(bool verbose)
+{
+#ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
+	struct tag *t;
+	char *list1 = NULL;
+	char *list2 = NULL;
+	char *fwver = NULL;
+	char *p = PLAIN_VERSION;
+	int i, end;
+
+	t = atags_get_tag(ATAG_FWVER);
+	if (t) {
+		list1 = calloc(1, sizeof(struct tag_fwver));
+		if (!list1)
+			return;
+		for (i = 0; i < FW_MAX; i++) {
+			if (t->u.fwver.ver[i][0] != '\0') {
+				strcat(list1, t->u.fwver.ver[i]);
+				strcat(list1, ",");
+			}
+		}
+	}
+
+	list2 = calloc(1, FWVER_LEN);
+	if (!list2)
+		goto out;
+	strcat(list2, "uboot-");
+	/* optional */
+#ifdef BUILD_TAG
+	strcat(list2, BUILD_TAG);
+	strcat(list2, "-");
+#endif
+	/* optional */
+	if (strcmp(PLAIN_VERSION, "2017.09")) {
+		strncat(list2, p + strlen("2017.09-g"), 10);
+		strcat(list2, "-");
+	}
+	strcat(list2, U_BOOT_DMI_DATE);
+
+	/* merge ! */
+	if (list1 || list2) {
+		fwver = calloc(1, sizeof(struct tag_fwver));
+		if (!fwver)
+			goto out;
+
+		strcat(fwver, "androidboot.fwver=");
+		if (list1)
+			strcat(fwver, list1);
+		if (list2) {
+			strcat(fwver, list2);
+		} else {
+			end = strlen(fwver) - 1;
+			fwver[end] = '\0'; /* omit last ',' */
+		}
+		if (verbose)
+			printf("## fwver: %s\n\n", fwver);
+		env_update("bootargs", fwver);
+		env_set("fwver", fwver + strlen("androidboot."));
+	}
+out:
+	if (list1)
+		free(list1);
+	if (list2)
+		free(list2);
+	if (fwver)
+		free(fwver);
+#endif
+}
+
+static void bootargs_add_android(bool verbose)
+{
 #ifdef CONFIG_ANDROID_AB
 		env_update_filter("bootargs", bootargs, "root=");
 		ab_update_root_partition();
