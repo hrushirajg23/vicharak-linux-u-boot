@@ -521,6 +521,19 @@ unsigned long blk_dwrite_zeroes(struct blk_desc *block_dev, lbaint_t start,
 	return ret;
 }
 
+unsigned long blk_dwrite_zeroes(struct blk_desc *block_dev, lbaint_t start,
+			       lbaint_t blkcnt)
+{
+	struct udevice *dev = block_dev->bdev;
+	const struct blk_ops *ops = blk_get_ops(dev);
+
+	if (!ops->write_zeroes)
+		return -ENOSYS;
+
+	blkcache_invalidate(block_dev->if_type, block_dev->devnum);
+	return ops->write_zeroes(dev, start, blkcnt);
+}
+
 unsigned long blk_derase(struct blk_desc *block_dev, lbaint_t start,
 			 lbaint_t blkcnt)
 {
