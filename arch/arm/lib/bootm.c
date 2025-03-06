@@ -29,6 +29,28 @@
 #include <linux/compiler.h>
 #include <bootm.h>
 #include <vxworks.h>
+#include <asm/io.h>
+#include <display_options.h>
+#include <linux/bitops.h>
+#include <linux/delay.h>
+#include <linux/iopoll.h>
+#include <malloc.h>
+#include <misc.h>
+
+//--------------------------------------------------------------------------
+#include <config.h>
+#include <errno.h>
+#include <fdtdec.h>
+#include <fdt_support.h>
+#include <asm/unaligned.h>
+#include <asm/arch/clock.h>
+#include <dm/device.h>
+#include <dm/lists.h>
+#include <dm/read.h>
+#include <linux/list.h>
+#include <div64.h>
+#include <efuse.h>
+
 
 #ifdef CONFIG_ARMV7_NONSEC
 #include <asm/armv7.h>
@@ -36,7 +58,221 @@
 #include <asm/setup.h>
 #include <asm/arch/rockchip_smccc.h>
 
+
+
+// static int get_key_from_efuse(void)
+// {
+// 	uint8_t val = 0;
+// #ifdef CONFIG_ROCKCHIP_EFUSE
+// 	struct udevice *dev;
+// 	int len=0,i=0;
+
+// 	uint32_t regs[2] = {0};
+// 	uint8_t fuses[1];
+// 	ofnode node,parent;
+// 	int ret;
+// 	const struct driver *drv=DM_GET_DRIVER(rockchip_efuse);
+	
+// 	if(drv==NULL){
+// 		printf("manual: DM_GET_DRIVER is not working\n");
+// 	}
+// 	else{
+// 		printf("manual: DM_GET_DRIVER is  working\n");
+// 		printf("driver name is %s\n",drv->name);
+// 		printf("driver id is %d\n",drv->id);
+// 	}
+// 	//int clid=uclass_get()
+// 	ret = uclass_get_device_by_driver(UCLASS_MISC,drv, &dev);
+		
+	
+	
+	
+// 	if (ret) {
+// 		printf("%s: no misc-device found\n", __func__);
+// 		return -EINVAL;
+// 	}
+	
+
+// 	node = dev_read_subnode(dev, "cpu-id");
+// 	if (!ofnode_valid(node)){
+// 		printf("dev_read_subnode not working\n");
+// 		return -EINVAL;
+// 	}
+// 	parent=ofnode_get_parent(node);
+// 	if (!ofnode_valid(parent)) {
+// 		printf("%s: parent node not found\n", __func__);
+// 		return -EINVAL;
+// 	}
+// 	printf("Listing properties of parent.............................\n");
+
+// 	struct property* pp=NULL;
+// 	for(pp=parent.np->properties,i=1;pp!=NULL;i++,pp=pp->next){
+// 		printf("property %d: ",i);
+// 		printf("property is %s\n",pp->name);
+// 	}
+// 	if(ofnode_valid(node)==true){
+// 		printf("cpu-id node is valid\n");
+// 	}
+// 	else{
+// 		printf("cpu-id node is not valid\n");
+// 	}
+
+// 	if(ofnode_valid(parent)==true){
+// 		printf("parent node- efuse is valid\n");
+// 	}
+// 	else{
+// 		printf("parent node-efuse is not valid\n");
+// 	}
+// 	printf("parent node name is %s\n",parent.np->name);
+// 	printf("child node name is %s\n",node.np->name);
+	
+// 	// const char* prop=dev_read_prop(dev,"reg",&len);
+// 	// if(prop==NULL){
+// 	// 	printf("property is NULL\n");
+// 	// }
+// 	// printf("node full name is %s\n ",node.np->full_name);
+// 	// printf("node name is %s\n ",node.np->name);
+// 	// printf("node property name is is %s\n ",node.np->properties->name);
+
+
+// 	const void* reg_prop=ofnode_get_property(parent,"reg",&len);
+// 	if(reg_prop==NULL){
+// 		printf("failed to get reg property\n");
+
+// 	}
+// 	else{
+// 		printf("Got access to reg property\n");
+// 		// *(struct property*)reg_prop
+
+// 	}
+
+
+// 	const void* compatible=ofnode_get_property(parent,"compatible",&len);
+// 	if(compatible==NULL){
+// 		printf("failed to get compatible property\n");
+// 	}
+
+// 	ret = ofnode_read_u32_array(parent, "reg", regs, 2);
+// 	if (ret==-EINVAL) {
+// 		printf("The reg property does not exist\n");
+// 		return -EINVAL;
+// 	}
+// 	else if(ret==-ENODATA){
+// 		printf("reg property does not have a value\n");
+// 	}
+// 	else if(ret==-EOVERFLOW){
+// 		printf("The reg property data isn't large enough.\n");
+// 		return -EOVERFLOW;
+// 	}
+
+// 	printf("value of regs[0] is %u\n",regs[0]);
+// 	printf("value of regs[1] is %u\n",regs[1]);
+
+// 	ret = misc_read(dev, regs[0], &fuses, regs[1]);
+// 	printf("value read in efuses is %c\n",(uint8_t)fuses[0]);
+
+// 	if (ret) {
+// 		printf("%s: misc_read failed\n", __func__);
+// 		return 0;
+// 	}
+
+// 	val = fuses[0];
+// 	val = (val >> 3) & 0x1;
+// #endif
+// 	return 0;
+// }
+
+
+
 DECLARE_GLOBAL_DATA_PTR;
+
+
+
+
+static int boot_efuse_read(struct udevice *dev, int offset,
+	void *buf, int size);
+
+
+static int read_public_key(void){
+
+	struct udevice* dev;
+	int ret,offset=0,size=128;
+	char buffer[128];
+	ret = uclass_get_device_by_driver(UCLASS_MISC,
+					  DM_GET_DRIVER(rockchip_efuse), &dev);
+	if (ret) {
+		printf("%s: no misc-device found\n", __func__);
+		return -EINVAL;
+	}
+
+	ret=boot_efuse_read(dev,offset,buffer,size);
+
+	if(ret)
+		printf("reading efuse-failed miserably\n");
+	
+	puts("printing efuse buffer...........................\n");
+	for(int i=0;i<sizeof(buffer);i++){
+		if(buffer[i]=='\0'){
+			puts("\0x00000000\t");
+		}
+		else{
+			printf("%c\t",buffer[i]);
+		}
+		if(i%2!=0){
+			puts("\n");
+		}
+	}
+
+	return 0;
+}
+
+
+static int boot_efuse_read(struct udevice *dev, int offset,
+	void *buf, int size)
+{
+struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
+struct rockchip_efuse_regs *efuse =
+(struct rockchip_efuse_regs *)plat->base;
+
+unsigned int addr_start, addr_end, addr_offset;
+u32 out_value;
+u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
+int i = 0;
+u32 addr;
+
+addr_start = offset / RK3399_BYTES_PER_FUSE;
+addr_offset = offset % RK3399_BYTES_PER_FUSE;
+addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
+
+/* cap to the size of the efuse block */
+if (addr_end > RK3399_NFUSES)
+addr_end = RK3399_NFUSES;
+
+writel(RK3399_LOAD | RK3399_PGENB | RK3399_STROBSFTSEL | RK3399_RSB,
+&efuse->ctrl);
+udelay(1);
+for (addr = addr_start; addr < addr_end; addr++) {
+setbits_le32(&efuse->ctrl,
+RK3399_STROBE | (addr << RK3399_A_SHIFT));
+udelay(1);
+out_value = readl(&efuse->dout);
+clrbits_le32(&efuse->ctrl, RK3399_STROBE);
+udelay(1);
+
+memcpy(&bytes[i], &out_value, RK3399_BYTES_PER_FUSE);
+i += RK3399_BYTES_PER_FUSE;
+}
+
+/* Switch to standby mode */
+writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
+
+memcpy(buf, bytes + addr_offset, size);
+
+return 0;
+}
+
+
+
 
 static struct tag *params;
 
@@ -115,7 +351,12 @@ static void announce_and_cleanup(bootm_headers_t *images, int fake)
 	us = (get_ticks() - gd->sys_start_tick) / (COUNTER_FREQUENCY / 1000000);
 	tt_us = get_ticks() / (COUNTER_FREQUENCY / 1000000);
 	printf("Total: %ld.%ld/%ld.%ld ms\n", us / 1000, us % 1000, tt_us / 1000, tt_us % 1000);
-
+	// int status= get_key_from_efuse();
+	// printf("status of efuse key is %d\n",status);
+	int status=read_public_key();
+	if(status)
+		printf("public key failed\n");
+	printf("transferring control to kernel\n");
 	printf("\nStarting kernel ...%s\n\n", fake ?
 		"(fake run for tracing)" : "");
 }
@@ -466,15 +707,24 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 #endif
 }
 
+
+
+
+
+
 /* Main Entry point for arm bootm implementation
  *
  * Modeled after the powerpc implementation
  * DIFFERENCE: Instead of calling prep and go at the end
  * they are called if subcommand is equal 0.
  */
-int do_bootm_linux(int flag, int argc, char * const argv[],
-		   bootm_headers_t *images)
+
+int do_bootm_linux(int flag, int argc, char * const argv[], bootm_headers_t *images)
 {
+
+	printf("manual: in do_bootm_linux\n");
+	//int iRet=dump_efuse();
+
 	/* No need for those on ARM */
 	if (flag & BOOTM_STATE_OS_BD_T || flag & BOOTM_STATE_OS_CMDLINE)
 		return -1;
@@ -488,6 +738,8 @@ int do_bootm_linux(int flag, int argc, char * const argv[],
 		boot_jump_linux(images, flag);
 		return 0;
 	}
+
+	//images->
 
 	boot_prep_linux(images);
 	boot_jump_linux(images, flag);

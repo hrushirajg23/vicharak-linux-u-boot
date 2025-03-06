@@ -56,7 +56,8 @@ static int rk3399_hdmi_probe(struct udevice *dev)
 	/* Enable regulators required for HDMI */
 	rk_hdmi_probe_regulators(dev, rk3399_regulator_names,
 				 ARRAY_SIZE(rk3399_regulator_names));
-
+	
+	printf("fn :: rk3399_hdmi_probe :: \n");
 	return rk_hdmi_probe(dev);
 }
 

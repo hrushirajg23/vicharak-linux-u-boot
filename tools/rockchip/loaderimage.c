@@ -120,6 +120,7 @@ unsigned int str2hex(char *str)
 		else
 			break;
 	}
+	printf("converted value from hex to decimal is %u\n",value);
 	return value;
 }
 
@@ -131,6 +132,8 @@ static uint32_t js_hash(uint8_t *buf, uint32_t len)
 	for (i = 0; i < len; i++)
 		hash ^= ((hash << 5) + buf[i] + (hash >> 2));
 
+
+	//puts("manual: calling hash\n");
 	return hash;
 }
 
@@ -149,6 +152,9 @@ int main(int argc, char *argv[])
 	char			*prepath = NULL;
 	char			file_name[1024];
 	uint32_t curr_version = 0;
+
+	printf("manual: in main function of loaderimage.c\n");
+	FILE* fnew=fopen("u-boot_logs_mine.txt","w+b");
 
 	if (argc < 3) {
 		usage(argv[0]);
@@ -212,6 +218,7 @@ int main(int argc, char *argv[])
 
 	/* config image information */
 	if (image == IMAGE_UBOOT) {
+		//printf("manual :  image is U-BOOT\n");
 		name = UBOOT_NAME;
 		magic = RK_UBOOT_MAGIC;
 		version = UBOOT_VERSION_STRING;
@@ -228,6 +235,8 @@ int main(int argc, char *argv[])
 		loader_addr =
 		        (in_loader_addr == -1) ? RK_TRUST_RUNNING_ADDR : in_loader_addr;
 	} else if (image == IMAGE_KERNEL) {
+		
+		//printf("manual : yes image is kernel\n");	
 		name = KERNEL_NAME;
 		magic = RK_KERNEL_MAGIC;
 		version = KERNEL_VERSION_STRING;
@@ -359,6 +368,7 @@ int main(int argc, char *argv[])
 		}
 
 		/* file in */
+		//printf("manual: MODE _ unpack file in  name is %s\n",file_in);
 		fi = fopen(file_in, "rb");
 		if (!fi) {
 			perror(file_in);
@@ -366,6 +376,7 @@ int main(int argc, char *argv[])
 		}
 
 		/* file out */
+		//printf("manual: MODE _ unpack file out name is %s\n",file_out);
 		fo = fopen(file_out, "wb");
 		if (!fo) {
 			perror(file_out);

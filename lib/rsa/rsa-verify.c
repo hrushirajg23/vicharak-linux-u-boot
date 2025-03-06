@@ -531,6 +531,8 @@ int rsa_verify(struct image_sign_info *info,
 	       const struct image_region region[], int region_count,
 	       uint8_t *sig, uint sig_len)
 {
+	
+	//puts("manual: inside rsa verify algorithm\n");
 	const void *blob = info->fdt_blob;
 	/* Reserve memory for maximum checksum-length */
 	uint8_t hash[info->crypto->key_len];
@@ -599,6 +601,8 @@ int rsa_verify(struct image_sign_info *info,
     defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP)
 int rsa_burn_key_hash(struct image_sign_info *info)
 {
+
+	//puts("manual: inside rsa_burn_key_hash algorithm\n");
 	char *rsa_key;
 	void *n, *e, *c;
 	uint32_t key_len;

@@ -326,6 +326,7 @@ int stdio_init_tables(void)
 
 int stdio_add_devices(void)
 {
+printf("fn :: stdio_add_devices :: \n");
 #ifdef CONFIG_DM_KEYBOARD
 	struct udevice *dev;
 	struct uclass *uc;
@@ -371,7 +372,7 @@ int stdio_add_devices(void)
 # ifndef CONFIG_DM_KEYBOARD
 	int ret;
 # endif
-
+	printf("fn :: stdio_add_devices :: UCLASS_VIDEO LOADING \n");
 	for (ret = uclass_first_device(UCLASS_VIDEO, &vdev);
 	     vdev;
 	     ret = uclass_next_device(&vdev))

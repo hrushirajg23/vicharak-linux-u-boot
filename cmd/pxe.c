@@ -150,7 +150,7 @@ static int do_get_ext2(cmd_tbl_t *cmdtp, const char *file_path, char *file_addr)
 	fs_argv[0] = "ext2load";
 	fs_argv[3] = file_addr;
 	fs_argv[4] = (void *)file_path;
-
+	printf("manual : ->  loading from ext2 int function<do_get_ext2>\n");
 	if (!do_ext2load(cmdtp, 0, 5, fs_argv))
 		return 1;
 #endif
@@ -164,6 +164,7 @@ static int do_get_fat(cmd_tbl_t *cmdtp, const char *file_path, char *file_addr)
 	fs_argv[3] = file_addr;
 	fs_argv[4] = (void *)file_path;
 
+	printf("manual : ->  loading from fat int function<do_get_fat>\n");
 	if (!do_fat_fsload(cmdtp, 0, 5, fs_argv))
 		return 1;
 #endif
@@ -177,6 +178,7 @@ static int do_get_any(cmd_tbl_t *cmdtp, const char *file_path, char *file_addr)
 	fs_argv[3] = file_addr;
 	fs_argv[4] = (void *)file_path;
 
+	printf("manual : ->  loading from any int function<do_get_any>\n");
 	if (!do_load(cmdtp, 0, 5, fs_argv, FS_TYPE_ANY))
 		return 1;
 #endif
@@ -217,7 +219,8 @@ static int get_relfile(cmd_tbl_t *cmdtp, const char *file_path,
 
 	strcat(relfile, file_path);
 
-	printf("Retrieving file: %s\n", relfile);
+	printf("from file pxe.c -> Retrieving file: %s\n", relfile);
+
 
 	sprintf(addr_buf, "%lx", file_addr);
 

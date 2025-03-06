@@ -14,6 +14,7 @@ static int do_charge_display(cmd_tbl_t *cmdtp, int flag, int argc,
 			     char *const argv[])
 {
 
+	printf(" fn :: do_charge_display :: \n");
 	struct charge_animation_pdata *pdata;
 	struct udevice *dev;
 	int screen_voltage;

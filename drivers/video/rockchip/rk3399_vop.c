@@ -63,6 +63,7 @@ static const char * const rk3399_regulator_names[] = {
 
 static int rk3399_vop_probe(struct udevice *dev)
 {
+	printf("fn :: rk3399_vop_probe :: \n");
 	/* Before relocation we don't need to do anything */
 	if (!(gd->flags & GD_FLG_RELOC))
 		return 0;
@@ -71,6 +72,10 @@ static int rk3399_vop_probe(struct udevice *dev)
 	rk_vop_probe_regulators(dev, rk3399_regulator_names,
 				ARRAY_SIZE(rk3399_regulator_names));
 
+	const void *blob = gd->fdt_blob;
+
+	const char *parent_name = fdt_get_name(blob, dev_of_offset(dev), NULL);
+	printf("fn :: rk3399_vop_probe :: %d :: %s\n",dev_of_offset(dev),parent_name);
 	return rk_vop_probe(dev);
 }
 
@@ -93,6 +98,18 @@ static const struct udevice_id rk3399_vop_ids[] = {
 
 static const struct video_ops rk3399_vop_ops = {
 };
+
+int rk_vop_bind_t(struct udevice *dev)
+{
+	printf("fn :: rk_vop_bind_t :: \n");
+	// struct video_uc_platdata *plat = dev_get_uclass_platdata(dev);
+
+	// plat->size = 4 * (CONFIG_VIDEO_ROCKCHIP_MAX_XRES *
+	// 		  CONFIG_VIDEO_ROCKCHIP_MAX_YRES);
+
+	return 0;
+}
+
 
 U_BOOT_DRIVER(rk3399_vop) = {
 	.name	= "rk3399_vop",

@@ -168,6 +168,7 @@ static void boot_lmb_init(bootm_headers_t *images)
 static int read_rockchip_image(struct blk_desc *dev_desc,
 			       disk_partition_t *part, void *dst)
 {
+	printf("manual: in function <read_rockchip_image> reading rockhip image from disk\n");
 	struct rockchip_image *img = dst;
 	int header_len = 8;
 	int cnt, ret;
@@ -242,6 +243,7 @@ static int boot_rockchip_image(struct blk_desc *dev_desc,
 		printf("Failed to read kernel image, ret=%d\n", ret);
 		return -EINVAL;
 	}
+	printf("manual: while reading image kernel size is %d\n",kernel_size);
 
 	ramdisk_size = read_rockchip_image(dev_desc, boot_part,
 					   (void *)ramdisk_addr_r);
@@ -305,7 +307,7 @@ static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag,
 	char *part_name = PART_BOOT;
 	struct blk_desc *dev_desc;
 	disk_partition_t part;
-	int ret;
+	int ret,iRet;
 
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
@@ -346,7 +348,16 @@ static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag,
 		return CMD_RET_FAILURE;
 	}
 
-	return boot_rockchip_image(dev_desc, &part) ? CMD_RET_FAILURE : 0;
+	//return boot_rockchip_image(dev_desc, &part) ? CMD_RET_FAILURE : 0;
+	iRet= boot_rockchip_image(dev_desc, &part);
+	if(iRet){
+		printf("manual: failure in boot_rockchip_image \n");
+		return CMD_RET_FAILURE;
+	}
+	else{
+		printf("manual: success in boot_rockchip_image \n");
+		return 0;
+	}
 }
 
 U_BOOT_CMD(

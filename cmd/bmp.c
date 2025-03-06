@@ -227,6 +227,7 @@ static int bmp_info(ulong addr)
  */
 int bmp_display(ulong addr, int x, int y)
 {
+	printf("fn :: bmp_display :: \n");
 #ifdef CONFIG_DM_VIDEO
 	struct udevice *dev;
 #endif
@@ -246,6 +247,7 @@ int bmp_display(ulong addr, int x, int y)
 	addr = map_to_sysmem(bmp);
 
 #ifdef CONFIG_DM_VIDEO
+	printf("fn :: bmp_display :: UCLASS_VIDEO LOADING\n");
 	ret = uclass_first_device_err(UCLASS_VIDEO, &dev);
 	if (!ret) {
 		bool align = false;

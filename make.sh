@@ -529,7 +529,7 @@ function pack_idblock()
 	# chip
 	COMMON_H=`grep "_common.h:" include/autoconf.mk.dep | awk -F "/" '{ printf $3 }'`
 	PLAT=${COMMON_H%_*}
-
+	
 	# file
 	SPL_BIN=${RKBIN}/`filt_val "FlashBoot" ${INI}`
 	TPL_BIN=${RKBIN}/`filt_val "FlashData" ${INI}`
@@ -545,6 +545,7 @@ function pack_idblock()
 	./tools/mkimage -n ${PLAT} -T rksd -d ${TPL_BIN}:${SPL_BIN} idblock.bin
 	cp idblock.bin idbloader.img
 	echo "Input:"
+	echo " PLAT VARIABLE is ${PLAT}"
 	echo "    ${INI}"
 	echo "    ${TPL_BIN}"
 	echo "    ${SPL_BIN}"

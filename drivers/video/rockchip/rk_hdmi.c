@@ -22,6 +22,7 @@
 #include "rk_hdmi.h"
 #include "rk_vop.h" /* for rk_vop_probe_regulators */
 
+
 static const struct hdmi_phy_config rockchip_phy_config[] = {
 	{
 		.mpixelclock = 74250000,
@@ -109,15 +110,18 @@ int rk_hdmi_probe(struct udevice *dev)
 	struct rk_hdmi_priv *priv = dev_get_priv(dev);
 	struct dw_hdmi *hdmi = &priv->hdmi;
 	int ret;
-
+	printf("fn :: rk_hdmi_probe :: starting \n");
 	ret = dw_hdmi_phy_wait_for_hpd(hdmi);
 	if (ret < 0) {
+		printf("fn :: rk_hdmi_probe :: hdmi can not get hpd signal \n");
 		debug("hdmi can not get hpd signal\n");
 		return -1;
 	}
 
 	dw_hdmi_init(hdmi);
 	dw_hdmi_phy_init(hdmi);
+
+	printf("fn :: rk_hdmi_probe :: success \n");
 
 	return 0;
 }

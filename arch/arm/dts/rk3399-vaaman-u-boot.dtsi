@@ -159,3 +159,4 @@
 &tcphy1_usb3 {
 	u-boot,dm-pre-reloc;
 };
+

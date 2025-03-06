@@ -505,11 +505,19 @@ int ofnode_decode_display_timing(ofnode parent, int index,
 
 const void *ofnode_get_property(ofnode node, const char *propname, int *lenp)
 {
-	if (ofnode_is_np(node))
+	if (ofnode_is_np(node)){
+		if(strcmp(propname,"reg")==0 && strcmp(node.np->name,"efuse")==0){
+			printf("inside <if> condition: ofnode_get_property");
+		}
 		return of_get_property(ofnode_to_np(node), propname, lenp);
-	else
+	}
+	else{
+		if(strcmp(propname,"reg")==0 && strcmp(node.np->name,"efuse")==0){
+			printf("inside <else> condition: ofnode_get_property");
+		}
 		return fdt_getprop(gd->fdt_blob, ofnode_to_offset(node),
 				   propname, lenp);
+	}
 }
 
 int ofnode_get_first_property(ofnode node, struct ofprop *prop)

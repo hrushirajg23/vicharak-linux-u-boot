@@ -550,6 +550,7 @@ int board_fdt_fixup(void *blob)
 
 	/* Common fixup for DRM */
 #ifdef CONFIG_DRM_ROCKCHIP
+    printf(" fn :: board_fdt_fixup :: rockchip_display_fixup\n");
 	rockchip_display_fixup(blob);
 #endif
 

@@ -20,7 +20,7 @@
 #include "rockchip_crtc.h"
 #include "rockchip_connector.h"
 
-#ifndef CONFIG_SPL_BUILD
+// #ifndef CONFIG_SPL_BUILD
 static const struct udevice_id rockchip_vp_ids[] = {
 	{ .compatible = "rockchip-vp" },
 	{ }
@@ -112,10 +112,10 @@ static const struct rockchip_crtc rk3328_vop_data = {
 	.data = &rk3328_vop,
 };
 
-static const struct rockchip_crtc rk3528_vop_data = {
-	.funcs = &rockchip_vop2_funcs,
-	.data = &rk3528_vop,
-};
+// static const struct rockchip_crtc rk3528_vop_data = {
+// 	.funcs = &rockchip_vop2_funcs,
+// 	.data = &rk3528_vop,
+// };
 
 static const struct rockchip_crtc rk3562_vop_data = {
 	.funcs = &rockchip_vop2_funcs,
@@ -184,9 +184,9 @@ static const struct udevice_id rockchip_vop_ids[] = {
 	}, {
 		.compatible = "rockchip,rk3328-vop",
 		.data = (ulong)&rk3328_vop_data,
-	}, {
-		.compatible = "rockchip,rk3528-vop",
-		.data = (ulong)&rk3528_vop_data,
+	// }, {
+	// 	.compatible = "rockchip,rk3528-vop",
+	// 	.data = (ulong)&rk3528_vop_data,
 	}, {
 		.compatible = "rockchip,rk3562-vop",
 		.data = (ulong)&rk3562_vop_data,
@@ -201,6 +201,7 @@ static const struct udevice_id rockchip_vop_ids[] = {
 
 static int rockchip_vop_probe(struct udevice *dev)
 {
+	printf("fn :: rockchip_vop_probe :: \n");
 	struct udevice *child;
 	int ret;
 
@@ -228,14 +229,18 @@ static int rockchip_vop_probe(struct udevice *dev)
 
 static int rockchip_vop_bind(struct udevice *dev)
 {
+	printf("fn :: rockchip_vop_bind :: \n");
 	ofnode ports, node;
 	int ret;
 
 	ports = dev_read_subnode(dev, "ports");
-	if (!ofnode_valid(ports))
+	if (!ofnode_valid(ports)){
+		printf("fn :: rockchip_vop_bind :: ofnode_valid \n");
 		return 0;
-
+	}
+		
 	ofnode_for_each_subnode(node, ports) {
+		printf("fn :: rockchip_vop_bind :: ofnode_for_each_subnode \n");
 		const char *name = ofnode_get_name(node);
 
 		ret = device_bind_driver_to_node(dev, "rockchip-vp", name,
@@ -262,18 +267,19 @@ UCLASS_DRIVER(rockchip_crtc) = {
 	.name		= "CRTC",
 };
 
-#else
-static struct rockchip_crtc rk3528_vop_data = {
-	.funcs = &rockchip_vop2_funcs,
-	.data = &rk3528_vop,
-};
+// #else
+// static struct rockchip_crtc rk3528_vop_data = {
+// 	.funcs = &rockchip_vop2_funcs,
+// 	.data = &rk3528_vop,
+// };
 
 int rockchip_spl_vop_probe(struct crtc_state *crtc_state)
 {
 
-	crtc_state->crtc = &rk3528_vop_data;
+	// crtc_state->crtc = &rk3528_vop_data;
 
 	return 0;
 }
-#endif
+
+// #endif
 

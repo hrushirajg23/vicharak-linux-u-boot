@@ -99,9 +99,11 @@ int iomux_doenv(const int console, const char *arg)
 		 * console_assign() also calls search_device(),
 		 * but I need the pointer to the device.
 		 */
+		printf("fn :: iomux_doenv :: search_device :: %s :: \n",start[j]);
 		dev = search_device(io_flag, start[j]);
 		if (dev == NULL)
 			continue;
+		
 		/*
 		 * Prevent multiple entries for a device.
 		 */
@@ -118,6 +120,7 @@ int iomux_doenv(const int console, const char *arg)
 		 * Try assigning the specified device.
 		 * This could screw up the console settings for apps.
 		 */
+		// printf("fn :: iomux_doenv :: console_assign :: %s :: \n",start[j]);
 		if (console_assign(console, start[j]) < 0)
 			continue;
 		cons_set[cs_idx++] = dev;

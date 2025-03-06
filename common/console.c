@@ -724,8 +724,10 @@ void clear_ctrlc(void)
 struct stdio_dev *search_device(int flags, const char *name)
 {
 	struct stdio_dev *dev;
+	// printf("fn :: search_device :: %s,\n", name);
 
 	dev = stdio_get_by_name(name);
+	printf("fn :: search_device :: %s :: out \n",name);
 #ifdef CONFIG_VIDCONSOLE_AS_LCD
 	if (!dev && !strcmp(name, "lcd"))
 		dev = stdio_get_by_name("vidconsole");
@@ -779,6 +781,7 @@ static void console_update_silent(void)
 
 int console_announce_r(void)
 {
+	printf("fn :: console_announce_r :: \n");
 #if !CONFIG_IS_ENABLED(PRE_CONSOLE_BUFFER)
 	char buf[DISPLAY_OPTIONS_BANNER_LENGTH];
 
@@ -830,7 +833,8 @@ void stdio_print_current_devices(void)
 #if CONFIG_IS_ENABLED(SYS_CONSOLE_IS_IN_ENV)
 /* Called after the relocation - use desired console functions */
 int console_init_r(void)
-{
+{	
+	printf(" fn :: console_init_r  1:: \n");
 	char *stdinname, *stdoutname, *stderrname;
 	struct stdio_dev *inputdev = NULL, *outputdev = NULL, *errdev = NULL;
 #ifdef CONFIG_SYS_CONSOLE_ENV_OVERWRITE
@@ -855,14 +859,19 @@ int console_init_r(void)
 
 	if (OVERWRITE_CONSOLE == 0) {	/* if not overwritten by config switch */
 		inputdev  = search_device(DEV_FLAGS_INPUT,  stdinname);
+		// printf(" fn :: console_init_r  1:: search_device stdoutname env:: \n");
 		outputdev = search_device(DEV_FLAGS_OUTPUT, stdoutname);
+		// printf(" fn :: console_init_r  1:: search_device stdoutname env out:: \n");
 		errdev    = search_device(DEV_FLAGS_OUTPUT, stderrname);
 #if CONFIG_IS_ENABLED(CONSOLE_MUX)
 		iomux_err = iomux_doenv(stdin, stdinname);
+		printf(" fn :: console_init_r  1:: iomux_doenv stdoutname env:: \n");
 		iomux_err += iomux_doenv(stdout, stdoutname);
+		printf(" fn :: console_init_r  1:: iomux_doenv stdoutname env after:: \n");
 		iomux_err += iomux_doenv(stderr, stderrname);
 		if (!iomux_err)
 			/* Successful, so skip all the code below. */
+		    // printf(" fn :: console_init_r  1:: iomux_err after done:: \n");
 			goto done;
 #endif
 	}
@@ -871,16 +880,21 @@ int console_init_r(void)
 		inputdev  = search_device(DEV_FLAGS_INPUT,  "serial");
 	}
 	if (outputdev == NULL) {
+		// printf(" fn :: console_init_r  1:: outputdev DEV_FLAGS_OUTPUT serial:: \n");
 		outputdev = search_device(DEV_FLAGS_OUTPUT, "serial");
+		// printf(" fn :: console_init_r  1:: outputdev DEV_FLAGS_OUTPUT serial out :: \n");
 	}
 	if (errdev == NULL) {
+		// printf(" fn :: console_init_r  1:: errdev DEV_FLAGS_OUTPUT serial:: \n");
 		errdev    = search_device(DEV_FLAGS_OUTPUT, "serial");
 	}
 	/* Initializes output console first */
 	if (outputdev != NULL) {
+		// printf(" fn :: console_init_r  1:: outputdev :: \n");
 		/* need to set a console if not done above. */
 		console_doenv(stdout, outputdev);
 	}
+	printf(" fn :: console_init_r  1:: console_doenv after env:: \n");
 	if (errdev != NULL) {
 		/* need to set a console if not done above. */
 		console_doenv(stderr, errdev);
@@ -889,34 +903,39 @@ int console_init_r(void)
 		/* need to set a console if not done above. */
 		console_doenv(stdin, inputdev);
 	}
-
+// printf(" fn :: console_init_r  1:: end :: \n");
 #if CONFIG_IS_ENABLED(CONSOLE_MUX)
 done:
 #endif
 
 #ifndef CONFIG_SYS_CONSOLE_INFO_QUIET
+	printf(" fn :: console_init_r  1:: stdio_print_current_devices :: \n");
 	stdio_print_current_devices();
 #endif /* CONFIG_SYS_CONSOLE_INFO_QUIET */
 #ifdef CONFIG_VIDCONSOLE_AS_LCD
+    printf(" fn :: console_init_r  1:: lcd :: \n");
 	if (strstr(stdoutname, "lcd"))
 		printf("Warning: Please change 'lcd' to 'vidconsole' in stdout/stderr environment vars\n");
 #endif
-
+	// printf(" fn :: console_init_r  1:: CONFIG_SYS_CONSOLE_ENV_OVERWRITE before :: \n");
 #ifdef CONFIG_SYS_CONSOLE_ENV_OVERWRITE
 	/* set the environment variables (will overwrite previous env settings) */
 	for (i = 0; i < 3; i++) {
+		// printf(" fn :: console_init_r  1:: env_set :: \n");
 		env_set(stdio_names[i], stdio_devices[i]->name);
 	}
 #endif /* CONFIG_SYS_CONSOLE_ENV_OVERWRITE */
-
+	// printf(" fn :: console_init_r  1:: GD_FLG_DEVINIT :: \n");
 	gd->flags |= GD_FLG_DEVINIT;	/* device initialization completed */
-
+	// printf(" fn :: console_init_r  1:: GD_FLG_DEVINIT finish :: \n");
 #if 0
 	/* If nothing usable installed, use only the initial console */
 	if ((stdio_devices[stdin] == NULL) && (stdio_devices[stdout] == NULL))
 		return 0;
 #endif
+	// printf(" fn :: console_init_r  1:: print_pre_console_buffer :: \n");
 	print_pre_console_buffer(PRE_CONSOLE_FLUSHPOINT2_EVERYTHING_BUT_SERIAL);
+	printf(" fn :: console_init_r  1:: end :: \n");
 	return 0;
 }
 
@@ -925,6 +944,7 @@ done:
 /* Called after the relocation - use desired console functions */
 int console_init_r(void)
 {
+	printf(" fn :: console_init_r  2:: \n");
 	struct stdio_dev *inputdev = NULL, *outputdev = NULL;
 	int i;
 	struct list_head *list = stdio_get_list();

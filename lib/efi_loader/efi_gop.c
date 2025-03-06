@@ -135,7 +135,7 @@ int efi_gop_register(void)
 
 #ifdef CONFIG_DM_VIDEO
 	struct udevice *vdev;
-
+	printf("fn :: efi_gop_register :: UCLASS_VIDEO LOADING \n");
 	/* We only support a single video output device for now */
 	if (uclass_first_device(UCLASS_VIDEO, &vdev) || !vdev)
 		return -1;

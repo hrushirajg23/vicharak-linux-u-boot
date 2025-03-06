@@ -25,6 +25,7 @@ int vidconsole_putc_xy(struct udevice *dev, uint x, uint y, char ch)
 
 	if (!ops->putc_xy)
 		return -ENOSYS;
+	
 	return ops->putc_xy(dev, x, y, ch);
 }
 
@@ -109,6 +110,7 @@ static void vidconsole_newline(struct udevice *dev)
 
 int vidconsole_put_char(struct udevice *dev, char ch)
 {
+	
 	struct vidconsole_priv *priv = dev_get_uclass_priv(dev);
 	int ret;
 
@@ -146,8 +148,9 @@ int vidconsole_put_char(struct udevice *dev, char ch)
 			ret = vidconsole_putc_xy(dev, priv->xcur_frac,
 						 priv->ycur, ch);
 		}
-		if (ret < 0)
+		if (ret < 0) // As I've tested for console this is not working.
 			return ret;
+	
 		priv->xcur_frac += ret;
 		priv->last_ch = ch;
 		if (priv->xcur_frac >= priv->xsize_frac)
@@ -168,6 +171,7 @@ static void vidconsole_putc(struct stdio_dev *sdev, const char ch)
 
 static void vidconsole_puts(struct stdio_dev *sdev, const char *s)
 {
+	
 	struct udevice *dev = sdev->priv;
 
 	while (*s)
@@ -178,18 +182,21 @@ static void vidconsole_puts(struct stdio_dev *sdev, const char *s)
 /* Set up the number of rows and colours (rotated drivers override this) */
 static int vidconsole_pre_probe(struct udevice *dev)
 {
+	printf("fn :: vidconsole_pre_probe :: \n");
 	struct vidconsole_priv *priv = dev_get_uclass_priv(dev);
 	struct udevice *vid = dev->parent;
 	struct video_priv *vid_priv = dev_get_uclass_priv(vid);
 
+	
 	priv->xsize_frac = VID_TO_POS(vid_priv->xsize);
-
+	printf("fn :: vidconsole_pre_probe :: priv->xsize_frac :: %d :: \n",priv->xsize_frac); 
 	return 0;
 }
 
 /* Register the device with stdio */
 static int vidconsole_post_probe(struct udevice *dev)
 {
+	printf("fn :: vidconsole_post_probe :: \n");
 	struct vidconsole_priv *priv = dev_get_uclass_priv(dev);
 	struct stdio_dev *sdev = &priv->sdev;
 

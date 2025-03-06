@@ -347,7 +347,7 @@ void image_print_contents(const void *ptr)
 {
 	const image_header_t *hdr = (const image_header_t *)ptr;
 	const char __maybe_unused *p;
-
+	printf("manual: printing image contents----------------------------------------\n");
 	p = IMAGE_INDENT_STRING;
 	printf("%sImage Name:   %.*s\n", p, IH_NMLEN, image_get_name(hdr));
 	if (IMAGE_ENABLE_TIMESTAMP) {

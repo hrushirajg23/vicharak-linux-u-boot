@@ -220,6 +220,7 @@ static void rkvop_mode_set(struct udevice *dev,
  */
 static int rk_display_init(struct udevice *dev, ulong fbbase, int ep_node)
 {
+	printf("fn :: rk_display_init :: \n");
 	struct video_priv *uc_priv = dev_get_uclass_priv(dev);
 	const void *blob = gd->fdt_blob;
 	struct rk_vop_priv *priv = dev_get_priv(dev);
@@ -333,6 +334,7 @@ void rk_vop_probe_regulators(struct udevice *dev,
 
 int rk_vop_probe(struct udevice *dev)
 {
+	printf("fn :: rk_vop_probe :: \n");
 	struct video_uc_platdata *plat = dev_get_uclass_platdata(dev);
 	const void *blob = gd->fdt_blob;
 	struct rk_vop_priv *priv = dev_get_priv(dev);
@@ -353,6 +355,12 @@ int rk_vop_probe(struct udevice *dev)
 	 * clock so it is currently not possible to use more than one display
 	 * device simultaneously.
 	 */
+	const char *parent_name = fdt_get_name(blob, dev_of_offset(dev), NULL);
+    if (!parent_name) {
+        printf("Failed to get parent node name\n");
+        // return NULL;
+    }
+	printf("fn :: rk_vop_probe :: %d :: %s\n",dev_of_offset(dev),parent_name);
 	port = fdt_subnode_offset(blob, dev_of_offset(dev), "port");
 	if (port < 0)
 		return -EINVAL;

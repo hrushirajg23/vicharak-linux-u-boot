@@ -17,6 +17,7 @@
 #include <asm/io.h>
 #include <div64.h>
 #include <linux/math64.h>
+#include <efuse.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -24,6 +25,8 @@ static struct blk_desc *fs_dev_desc;
 static int fs_dev_part;
 static disk_partition_t fs_partition;
 static int fs_type = FS_TYPE_ANY;
+
+static char buffer[128];
 
 static inline int fs_probe_unsupported(struct blk_desc *fs_dev_desc,
 				      disk_partition_t *fs_partition)
@@ -235,6 +238,8 @@ static struct fstype_info fstypes[] = {
 	},
 };
 
+static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size);
+
 static struct fstype_info *fs_get_info(int fstype)
 {
 	struct fstype_info *info;
@@ -415,8 +420,7 @@ int fs_read(const char *filename, ulong addr, loff_t offset, loff_t len,
 	return ret;
 }
 
-int fs_write(const char *filename, ulong addr, loff_t offset, loff_t len,
-	     loff_t *actwrite)
+int fs_write(const char *filename, ulong addr, loff_t offset, loff_t len,loff_t *actwrite)
 {
 	struct fstype_info *info = fs_get_info(fs_type);
 	void *buf;
@@ -488,8 +492,7 @@ void fs_closedir(struct fs_dir_stream *dirs)
 }
 
 
-int do_size(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
-		int fstype)
+int do_size(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],int fstype)
 {
 	loff_t size;
 
@@ -507,6 +510,111 @@ int do_size(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	return 0;
 }
 
+
+int read_public_key(char* ptr){
+
+	struct udevice* dev;
+	int ret,offset=0;
+	
+	ptr=buffer;
+	ret = uclass_get_device_by_driver(UCLASS_MISC,
+					  DM_GET_DRIVER(rockchip_efuse), &dev);
+	if (ret) {
+		printf("%s: no misc-device found\n", __func__);
+		return -EINVAL;
+	}
+
+	ret=boot_efuse_read(dev,offset,buffer,sizeof(buffer));
+
+	if(ret)
+		printf("reading efuse-failed miserably\n");
+	
+	puts("printing efuse buffer...........................\n");
+	for(int i=0;i<sizeof(buffer);i++){
+		if(buffer[i]=='\0'){
+			puts("\0x00000000\t");
+		}
+		else{
+			printf("%c\t",buffer[i]);
+		}
+		if(i%2!=0){
+			puts("\n");
+		}
+	}
+	return 0;
+	
+}
+
+
+static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size)
+{
+struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
+struct rockchip_efuse_regs *efuse =
+(struct rockchip_efuse_regs *)plat->base;
+
+unsigned int addr_start, addr_end, addr_offset;
+u32 out_value;
+u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
+int i = 0;
+u32 addr;
+
+addr_start = offset / RK3399_BYTES_PER_FUSE;
+addr_offset = offset % RK3399_BYTES_PER_FUSE;
+addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
+
+/* cap to the size of the efuse block */
+if (addr_end > RK3399_NFUSES)
+addr_end = RK3399_NFUSES;
+
+writel(RK3399_LOAD | RK3399_PGENB | RK3399_STROBSFTSEL | RK3399_RSB,
+&efuse->ctrl);
+udelay(1);
+for (addr = addr_start; addr < addr_end; addr++) {
+setbits_le32(&efuse->ctrl,
+RK3399_STROBE | (addr << RK3399_A_SHIFT));
+udelay(1);
+out_value = readl(&efuse->dout);
+clrbits_le32(&efuse->ctrl, RK3399_STROBE);
+udelay(1);
+
+memcpy(&bytes[i], &out_value, RK3399_BYTES_PER_FUSE);
+i += RK3399_BYTES_PER_FUSE;
+}
+
+/* Switch to standby mode */
+writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
+
+memcpy(buf, bytes + addr_offset, size);
+
+return 0;
+}
+
+
+void fs_read_into_buff(const char *filename,void* buf, ulong addr, loff_t offset, loff_t len,
+	loff_t *actread)
+{
+ struct fstype_info *info = fs_get_info(fs_type);
+ //void *buf;
+ int ret;
+
+ /*
+  * We don't actually know how many bytes are being read, since len==0
+  * means read the whole file.
+  */
+ buf = map_sysmem(addr, len);
+ 
+ ret = info->read(filename, buf, offset, len, actread);
+ //unmap_sysmem(buf);
+
+ /* If we requested a specific number of bytes, check we got it */
+ if (ret == 0 && len && *actread != len)
+	 printf("** %s shorter than offset + len **\n", filename);
+ fs_close();
+
+	
+}
+
+
 int do_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 		int fstype)
 {
@@ -516,9 +624,13 @@ int do_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	loff_t bytes;
 	loff_t pos;
 	loff_t len_read;
-	int ret;
+	int ret,iRet=0;
+	char image_bytes[4]={0};
+	char *efuse_data=NULL;
 	unsigned long time;
+	void* image_buffer=NULL;
 	char *ep;
+	const char kernel_image[]="/Image-5.10.233-vaaman";
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -548,6 +660,8 @@ int do_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 			return 1;
 		}
 	}
+	
+	printf("manual: in <file fs.c ,function do_load> filename is %s of length %ld\n",filename,strlen(filename));
 	if (argc >= 6)
 		bytes = simple_strtoul(argv[5], NULL, 16);
 	else
@@ -558,12 +672,66 @@ int do_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 		pos = 0;
 
 	time = get_timer(0);
+
+	printf("--------------------------manual: in <file fs.c ,function do_load> ----------------------\n --------------------------------before read---------------------------------- \n");
+	
+	printf("kernel_image file name length is %ld\n",sizeof(kernel_image));
+
+	if(strcmp(filename,kernel_image)==0 ){
+			printf("<->-<->-<->-<->- Entered the comparsion space -<->-<->-<->-<->\n");
+			fs_read_into_buff(filename,image_buffer,addr,pos,bytes,&len_read);
+			if(image_buffer!=NULL){
+				for(int i=0;i<=3;i++){
+					if(((char*)(image_buffer))[len_read-1-i]=='\0'){
+						printf("0x0000 0000\n");
+						
+					}
+					else{
+						printf("%c\n",((char* )(image_buffer))[len_read-1-i]);
+					}
+					image_bytes[i]=((char*)(image_buffer))[len_read-1-i];
+				}
+			}
+			
+			unmap_sysmem(image_buffer);
+	
+			iRet=read_public_key(efuse_data);
+			if(iRet==-EINVAL){
+				printf("couldn' read public key fail.............\n");
+			}
+			else{
+				printf("public key read success fully\n");
+			}
+			
+
+			for(int i=0;i<4;i++){
+
+				// if(efuse_data[i]==image_bytes[i]){
+				// 	printf("index %d matched\n",i);
+				// }
+				// else{
+				// 	printf("index %d unmatched\n",i);
+				// }
+				if(image_bytes[i]=='\0'){
+					printf("0x0000 0000\n");
+				}
+				else{
+					printf("%c\n",image_bytes[i]);
+				}
+			}
+	}
+	
 	ret = fs_read(filename, addr, pos, bytes, &len_read);
 	time = get_timer(time);
 	if (ret < 0)
 		return 1;
 
 	printf("%llu bytes read in %lu ms", len_read, time);
+
+	printf("manual: in <file fs.c ,function do_load> addr is %lu\n",addr);
+	printf("manual: in <file fs.c ,function do_load> pos is %lld\n",pos);
+	printf("manual: in <file fs.c ,function do_load> bytes  is %llu\n",bytes);
+	printf("manual: in <file fs.c ,function do_load> len_read is %lld\n",len_read);
 	if (time > 0) {
 		puts(" (");
 		print_size(div_u64(len_read, time) * 1000, "/s");
@@ -612,6 +780,7 @@ int do_save(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	loff_t pos;
 	loff_t len;
 	int ret;
+	
 	unsigned long time;
 
 	if (argc < 6 || argc > 7)

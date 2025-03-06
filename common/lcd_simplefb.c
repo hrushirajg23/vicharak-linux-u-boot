@@ -27,7 +27,7 @@ static int lcd_dt_simplefb_configure_node(void *blob, int off)
 	struct video_priv *uc_priv;
 	struct udevice *dev;
 	int ret;
-
+	printf("fn :: lcd_dt_simplefb_configure_node :: UCLASS_VIDEO LOADING \n");
 	ret = uclass_first_device_err(UCLASS_VIDEO, &dev);
 	if (ret)
 		return ret;

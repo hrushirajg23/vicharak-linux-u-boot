@@ -124,10 +124,13 @@ struct property *of_find_property(const struct device_node *np,
 				  const char *name, int *lenp)
 {
 	struct property *pp;
-
+	//bool bFlag=false;
 	if (!np)
 		return NULL;
-
+	// if(strcmp(np->name,"efuse")==0){
+	// 	printf("starting to print properties\n");
+	// 	bFlag=true;
+	// }
 	for (pp = np->properties; pp; pp = pp->next) {
 		if (strcmp(pp->name, name) == 0) {
 			if (lenp)
@@ -167,7 +170,15 @@ const void *of_get_property(const struct device_node *np, const char *name,
 			    int *lenp)
 {
 	struct property *pp = of_find_property(np, name, lenp);
-
+	if(strcmp(name,"reg")==0 && strcmp(np->name,"efuse")==0){
+		printf("in function <of_get_property> \n");
+		if(pp==NULL){
+			printf("in function <of_get_property>: property not found\n");
+		}
+		else{
+			printf("in function <of_get_property>: property found\n");
+		}
+	}
 	return pp ? pp->value : NULL;
 }
 

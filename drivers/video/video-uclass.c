@@ -54,6 +54,8 @@ void video_set_flush_dcache(struct udevice *dev, bool flush)
 
 static ulong alloc_fb(struct udevice *dev, ulong *addrp)
 {
+	printf("fn :: alloc_fb :: \n");
+	
 	struct video_uc_platdata *plat = dev_get_uclass_platdata(dev);
 	ulong base, align, size;
 
@@ -64,6 +66,7 @@ static ulong alloc_fb(struct udevice *dev, ulong *addrp)
 	base = *addrp - plat->size;
 	base &= ~(align - 1);
 	plat->base = base;
+	// printf("fn :: base address is %lu :: \n",plat->base);
 	size = *addrp - base;
 	*addrp = base;
 
@@ -72,6 +75,7 @@ static ulong alloc_fb(struct udevice *dev, ulong *addrp)
 
 int video_reserve(ulong *addrp)
 {
+	printf(" fn :: video_reserve :: \n");
 #ifndef CONFIG_DRM_ROCKCHIP
 	struct udevice *dev;
 #endif
@@ -90,6 +94,7 @@ int video_reserve(ulong *addrp)
 	*addrp &= ~((1 << 20) - 1);
 	debug("Reserving %lx Bytes for video at: %lx\n", size, *addrp);
 #else
+	printf(" fn :: video_reserve :: UCLASS_VIDEO LOADING\n");
 	for (uclass_find_first_device(UCLASS_VIDEO, &dev);
 	     dev;
 	     uclass_find_next_device(&dev)) {
@@ -152,7 +157,7 @@ void video_sync(struct udevice *vid)
 void video_sync_all(void)
 {
 	struct udevice *dev;
-
+	printf(" fn :: video_sync_all :: UCLASS_VIDEO LOADING\n");
 	for (uclass_find_first_device(UCLASS_VIDEO, &dev);
 	     dev;
 	     uclass_find_next_device(&dev)) {

@@ -259,7 +259,7 @@ int fit_board_verify_required_sigs(void)
 #else /* !CONFIG_SPL_BUILD */
 #if defined(CONFIG_OPTEE_CLIENT)
 	int ret;
-
+	printf("manual: calling function <trusty_read_vbootkey_enable_flag(&vboot)> \n");
 	ret = trusty_read_vbootkey_enable_flag(&vboot);
 	if (ret) {
 		printf("Can't read verified-boot flag, ret=%d\n", ret);
@@ -267,7 +267,7 @@ int fit_board_verify_required_sigs(void)
 	}
 #elif defined(CONFIG_ROCKCHIP_PRELOADER_ATAGS)
 	struct tag *t;
-
+	printf("manual: calling function <atags_get_tag(ATAG_PUB_KEY);> \n");
 	t = atags_get_tag(ATAG_PUB_KEY);
 	if (t && t->u.pub_key.flag == PUBKEY_FUSE_PROGRAMMED)
 		vboot = 1;

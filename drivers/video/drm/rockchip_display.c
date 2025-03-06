@@ -1257,6 +1257,7 @@ enum LOGO_SOURCE {
 
 static int load_bmp_logo(struct logo_info *logo, const char *bmp_name)
 {
+	printf("fn :: load_bmp_logo :: \n");
 	struct rockchip_logo_cache *logo_cache;
 	struct bmp_header *header;
 	void *dst = NULL, *pdst;
@@ -1414,12 +1415,14 @@ int rockchip_show_bmp(const char *bmp)
 
 int rockchip_show_logo(void)
 {
+	printf(" fn :: rockchip_show_logo :: \n");
 	struct display_state *s;
 	struct display_state *ms = NULL;
 	int ret = 0;
 	int count = 0;
 
 	list_for_each_entry(s, &rockchip_display_list, head) {
+		printf(" fn :: rockchip_show_logo :: list_for_each_entry\n");
 		s->logo.mode = s->logo_mode;
 		if (load_bmp_logo(&s->logo, s->ulogo_name)) {
 			printf("failed to display uboot logo\n");
@@ -1873,6 +1876,9 @@ static int rockchip_display_fixup_dts(void *blob)
 
 static int rockchip_display_probe(struct udevice *dev)
 {
+	printf(" fn :: rockchip_display_probe :: \n");
+	// Get the parent node's name
+
 	struct video_priv *uc_priv = dev_get_uclass_priv(dev);
 	struct video_uc_platdata *plat = dev_get_uclass_platdata(dev);
 	const void *blob = gd->fdt_blob;
@@ -2083,6 +2089,8 @@ static int rockchip_display_probe(struct udevice *dev)
 	uc_priv->xsize = DRM_ROCKCHIP_FB_WIDTH;
 	uc_priv->ysize = DRM_ROCKCHIP_FB_HEIGHT;
 	uc_priv->bpix = VIDEO_BPP32;
+
+	printf(" fn :: rockchip_display_probe :: uc_priv->xsize :: %d\n",uc_priv->xsize);
 
 	#ifdef CONFIG_DRM_ROCKCHIP_VIDEO_FRAMEBUFFER
 	rockchip_show_fbbase(plat->base);
