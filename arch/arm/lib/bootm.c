@@ -189,87 +189,87 @@ DECLARE_GLOBAL_DATA_PTR;
 
 
 
-static int boot_efuse_read(struct udevice *dev, int offset,
-	void *buf, int size);
+// static int boot_efuse_read(struct udevice *dev, int offset,
+// 	void *buf, int size);
 
 
-static int read_public_key(void){
+// static int read_public_key(void){
 
-	struct udevice* dev;
-	int ret,offset=0,size=128;
-	char buffer[128];
-	ret = uclass_get_device_by_driver(UCLASS_MISC,
-					  DM_GET_DRIVER(rockchip_efuse), &dev);
-	if (ret) {
-		printf("%s: no misc-device found\n", __func__);
-		return -EINVAL;
-	}
+// 	struct udevice* dev;
+// 	int ret,offset=0,size=128;
+// 	char buffer[128];
+// 	ret = uclass_get_device_by_driver(UCLASS_MISC,
+// 					  DM_GET_DRIVER(rockchip_efuse), &dev);
+// 	if (ret) {
+// 		printf("%s: no misc-device found\n", __func__);
+// 		return -EINVAL;
+// 	}
 
-	ret=boot_efuse_read(dev,offset,buffer,size);
+// 	ret=boot_efuse_read(dev,offset,buffer,size);
 
-	if(ret)
-		printf("reading efuse-failed miserably\n");
+// 	if(ret)
+// 		printf("reading efuse-failed miserably\n");
 	
-	puts("printing efuse buffer...........................\n");
-	for(int i=0;i<sizeof(buffer);i++){
-		if(buffer[i]=='\0'){
-			puts("\0x00000000\t");
-		}
-		else{
-			printf("%c\t",buffer[i]);
-		}
-		if(i%2!=0){
-			puts("\n");
-		}
-	}
+// 	puts("printing efuse buffer...........................\n");
+// 	for(int i=0;i<sizeof(buffer);i++){
+// 		if(buffer[i]=='\0'){
+// 			puts("\0x00000000\t");
+// 		}
+// 		else{
+// 			printf("%c\t",buffer[i]);
+// 		}
+// 		if(i%2!=0){
+// 			puts("\n");
+// 		}
+// 	}
 
-	return 0;
-}
+// 	return 0;
+// }
 
 
-static int boot_efuse_read(struct udevice *dev, int offset,
-	void *buf, int size)
-{
-struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
-struct rockchip_efuse_regs *efuse =
-(struct rockchip_efuse_regs *)plat->base;
+// static int boot_efuse_read(struct udevice *dev, int offset,
+// 	void *buf, int size)
+// {
+// struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
+// struct rockchip_efuse_regs *efuse =
+// (struct rockchip_efuse_regs *)plat->base;
 
-unsigned int addr_start, addr_end, addr_offset;
-u32 out_value;
-u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
-int i = 0;
-u32 addr;
+// unsigned int addr_start, addr_end, addr_offset;
+// u32 out_value;
+// u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
+// int i = 0;
+// u32 addr;
 
-addr_start = offset / RK3399_BYTES_PER_FUSE;
-addr_offset = offset % RK3399_BYTES_PER_FUSE;
-addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
+// addr_start = offset / RK3399_BYTES_PER_FUSE;
+// addr_offset = offset % RK3399_BYTES_PER_FUSE;
+// addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
 
-/* cap to the size of the efuse block */
-if (addr_end > RK3399_NFUSES)
-addr_end = RK3399_NFUSES;
+// /* cap to the size of the efuse block */
+// if (addr_end > RK3399_NFUSES)
+// addr_end = RK3399_NFUSES;
 
-writel(RK3399_LOAD | RK3399_PGENB | RK3399_STROBSFTSEL | RK3399_RSB,
-&efuse->ctrl);
-udelay(1);
-for (addr = addr_start; addr < addr_end; addr++) {
-setbits_le32(&efuse->ctrl,
-RK3399_STROBE | (addr << RK3399_A_SHIFT));
-udelay(1);
-out_value = readl(&efuse->dout);
-clrbits_le32(&efuse->ctrl, RK3399_STROBE);
-udelay(1);
+// writel(RK3399_LOAD | RK3399_PGENB | RK3399_STROBSFTSEL | RK3399_RSB,
+// &efuse->ctrl);
+// udelay(1);
+// for (addr = addr_start; addr < addr_end; addr++) {
+// setbits_le32(&efuse->ctrl,
+// RK3399_STROBE | (addr << RK3399_A_SHIFT));
+// udelay(1);
+// out_value = readl(&efuse->dout);
+// clrbits_le32(&efuse->ctrl, RK3399_STROBE);
+// udelay(1);
 
-memcpy(&bytes[i], &out_value, RK3399_BYTES_PER_FUSE);
-i += RK3399_BYTES_PER_FUSE;
-}
+// memcpy(&bytes[i], &out_value, RK3399_BYTES_PER_FUSE);
+// i += RK3399_BYTES_PER_FUSE;
+// }
 
-/* Switch to standby mode */
-writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
+// /* Switch to standby mode */
+// writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
 
-memcpy(buf, bytes + addr_offset, size);
+// memcpy(buf, bytes + addr_offset, size);
 
-return 0;
-}
+// return 0;
+// }
 
 
 
@@ -353,9 +353,9 @@ static void announce_and_cleanup(bootm_headers_t *images, int fake)
 	printf("Total: %ld.%ld/%ld.%ld ms\n", us / 1000, us % 1000, tt_us / 1000, tt_us % 1000);
 	// int status= get_key_from_efuse();
 	// printf("status of efuse key is %d\n",status);
-	int status=read_public_key();
-	if(status)
-		printf("public key failed\n");
+	// int status=read_public_key();
+	// if(status)
+	// 	printf("public key failed\n");
 	printf("transferring control to kernel\n");
 	printf("\nStarting kernel ...%s\n\n", fake ?
 		"(fake run for tracing)" : "");

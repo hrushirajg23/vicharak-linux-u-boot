@@ -25,8 +25,16 @@ static struct blk_desc *fs_dev_desc;
 static int fs_dev_part;
 static disk_partition_t fs_partition;
 static int fs_type = FS_TYPE_ANY;
+const char *kernel_image="/Image-5.10.233-vaaman";
+
 
 static char buffer[128];
+static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size);
+int read_public_key(char* ptr);
+void fs_read_into_buff(const char *filename,void* buf, ulong addr, loff_t offset, loff_t len,
+	loff_t *actread);
+
+
 
 static inline int fs_probe_unsupported(struct blk_desc *fs_dev_desc,
 				      disk_partition_t *fs_partition)
@@ -238,8 +246,6 @@ static struct fstype_info fstypes[] = {
 	},
 };
 
-static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size);
-
 static struct fstype_info *fs_get_info(int fstype)
 {
 	struct fstype_info *info;
@@ -403,13 +409,66 @@ int fs_read(const char *filename, ulong addr, loff_t offset, loff_t len,
 	struct fstype_info *info = fs_get_info(fs_type);
 	void *buf;
 	int ret;
+	int iRet=0;
+	char image_bytes[4]={0};
+	char *efuse_data=NULL;
+//	unsigned long time;
+	//void* image_buffer=NULL;
 
 	/*
 	 * We don't actually know how many bytes are being read, since len==0
 	 * means read the whole file.
 	 */
+
 	buf = map_sysmem(addr, len);
 	ret = info->read(filename, buf, offset, len, actread);
+
+	printf("file name is %s length is %ld\n",filename,sizeof(kernel_image));
+
+	if(strcmp(filename,kernel_image)==0 ){
+			printf("<->-<->-<->-<->- Entered the comparsion space -<->-<->-<->-<->\n");
+			//fs_read_into_buff(filename,image_buffer,addr,pos,bytes,&len_read);
+			printf("actread value is %lld\n",(*actread));
+			if(buf!=NULL){
+				for(int i=3;i>=0;i--){
+					if(((char*)(buf))[(*actread)-1-i]=='\0'){
+						printf("0x0000 0000\n");
+						
+					}
+					else{
+						printf("%c\n",((char* )(buf))[(*actread)-1-i]);
+					}
+					image_bytes[i]=((char*)(buf))[(*actread)-1-i];
+				}
+			}
+			
+			// //unmap_sysmem(image_buffer);
+	
+			iRet=read_public_key(efuse_data);
+			if(iRet==-EINVAL){
+				printf("couldn' read public key fail.............\n");
+			}
+			else{
+				printf("public key read success fully\n");
+			}
+			
+
+			for(int i=0;i<4;i++){
+
+				// if(efuse_data[i]==image_bytes[i]){
+				// 	printf("index %d matched\n",i);
+				// }
+				// else{
+				// 	printf("index %d unmatched\n",i);
+				// }
+				if(image_bytes[i]=='\0'){
+					printf("0x0000 0000\n");
+				}
+				else{
+					printf("%c\n",image_bytes[i]);
+				}
+			}
+	}
 	unmap_sysmem(buf);
 
 	/* If we requested a specific number of bytes, check we got it */
@@ -590,29 +649,29 @@ return 0;
 }
 
 
-void fs_read_into_buff(const char *filename,void* buf, ulong addr, loff_t offset, loff_t len,
-	loff_t *actread)
-{
- struct fstype_info *info = fs_get_info(fs_type);
- //void *buf;
- int ret;
+// void fs_read_into_buff(const char *filename,void* buf, ulong addr, loff_t offset, loff_t len,
+// 	loff_t *actread)
+// {
+//  struct fstype_info *info = fs_get_info(fs_type);
+//  //void *buf;
+//  int ret;
 
- /*
-  * We don't actually know how many bytes are being read, since len==0
-  * means read the whole file.
-  */
- buf = map_sysmem(addr, len);
+//  /*
+//   * We don't actually know how many bytes are being read, since len==0
+//   * means read the whole file.
+//   */
+//  buf = map_sysmem(addr, len);
  
- ret = info->read(filename, buf, offset, len, actread);
- //unmap_sysmem(buf);
+//  ret = info->read(filename, buf, offset, len, actread);
+//  //unmap_sysmem(buf);
 
- /* If we requested a specific number of bytes, check we got it */
- if (ret == 0 && len && *actread != len)
-	 printf("** %s shorter than offset + len **\n", filename);
- fs_close();
+//  /* If we requested a specific number of bytes, check we got it */
+//  if (ret == 0 && len && *actread != len)
+// 	 printf("** %s shorter than offset + len **\n", filename);
+//  fs_close();
 
 	
-}
+// }
 
 
 int do_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
@@ -624,14 +683,14 @@ int do_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	loff_t bytes;
 	loff_t pos;
 	loff_t len_read;
-	int ret,iRet=0;
-	char image_bytes[4]={0};
-	char *efuse_data=NULL;
+	int ret;
+	//int iRet=0;
+	// char image_bytes[4]={0};
+	// char *efuse_data=NULL;
 	unsigned long time;
-	void* image_buffer=NULL;
+	//void* image_buffer=NULL;
 	char *ep;
-	const char kernel_image[]="/Image-5.10.233-vaaman";
-
+	
 	if (argc < 2)
 		return CMD_RET_USAGE;
 	if (argc > 7)
@@ -662,6 +721,7 @@ int do_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	}
 	
 	printf("manual: in <file fs.c ,function do_load> filename is %s of length %ld\n",filename,strlen(filename));
+	puts("\n\n");
 	if (argc >= 6)
 		bytes = simple_strtoul(argv[5], NULL, 16);
 	else
@@ -673,53 +733,49 @@ int do_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 
 	time = get_timer(0);
 
-	printf("--------------------------manual: in <file fs.c ,function do_load> ----------------------\n --------------------------------before read---------------------------------- \n");
-	
-	printf("kernel_image file name length is %ld\n",sizeof(kernel_image));
-
-	if(strcmp(filename,kernel_image)==0 ){
-			printf("<->-<->-<->-<->- Entered the comparsion space -<->-<->-<->-<->\n");
-			fs_read_into_buff(filename,image_buffer,addr,pos,bytes,&len_read);
-			if(image_buffer!=NULL){
-				for(int i=0;i<=3;i++){
-					if(((char*)(image_buffer))[len_read-1-i]=='\0'){
-						printf("0x0000 0000\n");
+	// if(strcmp(filename,kernel_image)==0 ){
+	// 		printf("<->-<->-<->-<->- Entered the comparsion space -<->-<->-<->-<->\n");
+	// 		fs_read_into_buff(filename,image_buffer,addr,pos,bytes,&len_read);
+	// 		if(image_buffer!=NULL){
+	// 			for(int i=0;i<=3;i++){
+	// 				if(((char*)(image_buffer))[len_read-1-i]=='\0'){
+	// 					printf("0x0000 0000\n");
 						
-					}
-					else{
-						printf("%c\n",((char* )(image_buffer))[len_read-1-i]);
-					}
-					image_bytes[i]=((char*)(image_buffer))[len_read-1-i];
-				}
-			}
+	// 				}
+	// 				else{
+	// 					printf("%c\n",((char* )(image_buffer))[len_read-1-i]);
+	// 				}
+	// 				image_bytes[i]=((char*)(image_buffer))[len_read-1-i];
+	// 			}
+	// 		}
 			
-			unmap_sysmem(image_buffer);
+	// 		unmap_sysmem(image_buffer);
 	
-			iRet=read_public_key(efuse_data);
-			if(iRet==-EINVAL){
-				printf("couldn' read public key fail.............\n");
-			}
-			else{
-				printf("public key read success fully\n");
-			}
+	// 		iRet=read_public_key(efuse_data);
+	// 		if(iRet==-EINVAL){
+	// 			printf("couldn' read public key fail.............\n");
+	// 		}
+	// 		else{
+	// 			printf("public key read success fully\n");
+	// 		}
 			
 
-			for(int i=0;i<4;i++){
+	// 		for(int i=0;i<4;i++){
 
-				// if(efuse_data[i]==image_bytes[i]){
-				// 	printf("index %d matched\n",i);
-				// }
-				// else{
-				// 	printf("index %d unmatched\n",i);
-				// }
-				if(image_bytes[i]=='\0'){
-					printf("0x0000 0000\n");
-				}
-				else{
-					printf("%c\n",image_bytes[i]);
-				}
-			}
-	}
+	// 			// if(efuse_data[i]==image_bytes[i]){
+	// 			// 	printf("index %d matched\n",i);
+	// 			// }
+	// 			// else{
+	// 			// 	printf("index %d unmatched\n",i);
+	// 			// }
+	// 			if(image_bytes[i]=='\0'){
+	// 				printf("0x0000 0000\n");
+	// 			}
+	// 			else{
+	// 				printf("%c\n",image_bytes[i]);
+	// 			}
+	// 		}
+	// }
 	
 	ret = fs_read(filename, addr, pos, bytes, &len_read);
 	time = get_timer(time);
