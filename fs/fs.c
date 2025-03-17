@@ -42,20 +42,22 @@ const char *kernel_image="/Image-5.10.233-vaaman";
 
 static char buffer[128];
 static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size);
+static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size);
 int read_public_key(char* ptr);
+int write_public_key(char* ptr);
 void fs_read_into_buff(const char *filename,void* buf, ulong addr, loff_t offset, loff_t len,
 	loff_t *actread);
 
-	struct key_prop {
-		uint8_t key[256]; // Assuming a 2048-bit RSA key
-	 };
+	// struct key_prop {
+	// 	uint8_t key[256]; // Assuming a 2048-bit RSA key
+	//  };
 
-void compute_sha256(const void *data, size_t len, uint8_t *out_hash) {
-	sha256_context ctx;
-	sha256_starts(&ctx);
-	sha256_update(&ctx, data, len);
-	sha256_finish(&ctx, out_hash);
-	}
+// void compute_sha256(const void *data, size_t len, uint8_t *out_hash) {
+// 	sha256_context ctx;
+// 	sha256_starts(&ctx);
+// 	sha256_update(&ctx, data, len);
+// 	sha256_finish(&ctx, out_hash);
+// 	}
 static inline int fs_probe_unsupported(struct blk_desc *fs_dev_desc,
 				      disk_partition_t *fs_partition)
 {
@@ -487,6 +489,7 @@ int fs_read(const char *filename, ulong addr, loff_t offset, loff_t len,
 			iRet=read_public_key(efuse_data);
 			
 			
+			//printf("just printing iRet %d\n",iRet);
 			if(iRet==-EINVAL){
 				printf("couldn' read public key fail.............\n");
 			}
@@ -628,7 +631,6 @@ int read_public_key(char* ptr){
 
 	struct udevice* dev;
 	int ret,offset=0;
-	
 	ptr=buffer;
 	ret = uclass_get_device_by_driver(UCLASS_MISC,
 					  DM_GET_DRIVER(rockchip_efuse), &dev);
@@ -636,12 +638,12 @@ int read_public_key(char* ptr){
 		printf("%s: no misc-device found\n", __func__);
 		return -EINVAL;
 	}
-
+	
 	ret=boot_efuse_read(dev,offset,buffer,sizeof(buffer));
 
 	if(ret)
-		printf("reading efuse-failed miserably\n");
-	
+	printf("reading efuse-failed miserably\n");
+
 	puts("printing efuse buffer...........................\n");
 	for(int i=0;i<sizeof(buffer);i++){
 		if(buffer[i]=='\0'){
@@ -654,52 +656,159 @@ int read_public_key(char* ptr){
 			puts("\n");
 		}
 	}
+
+
+	
 	return 0;
 	
 }
 
 
-static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size)
-{
-struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
-struct rockchip_efuse_regs *efuse =
-(struct rockchip_efuse_regs *)plat->base;
 
-unsigned int addr_start, addr_end, addr_offset;
-u32 out_value;
-u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
-int i = 0;
-u32 addr;
+int write_public_key(char* ptr){
 
-addr_start = offset / RK3399_BYTES_PER_FUSE;
-addr_offset = offset % RK3399_BYTES_PER_FUSE;
-addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
+	struct udevice* dev;
+	int ret,offset=0;
+	int i=1;
+	ptr=buffer;
+	ret = uclass_get_device_by_driver(UCLASS_MISC,
+					  DM_GET_DRIVER(rockchip_efuse), &dev);
+	if (ret) {
+		printf("%s: no misc-device found\n", __func__);
+		return -EINVAL;
+	}
+	
+	
+	for(i=0;i<sizeof(buffer);i++){
+		buffer[i]='a';
+	}
+	ret=boot_efuse_write(dev,offset,buffer,sizeof(buffer));
 
-/* cap to the size of the efuse block */
-if (addr_end > RK3399_NFUSES)
-addr_end = RK3399_NFUSES;
-
-writel(RK3399_LOAD | RK3399_PGENB | RK3399_STROBSFTSEL | RK3399_RSB,
-&efuse->ctrl);
-udelay(1);
-for (addr = addr_start; addr < addr_end; addr++) {
-setbits_le32(&efuse->ctrl,
-RK3399_STROBE | (addr << RK3399_A_SHIFT));
-udelay(1);
-out_value = readl(&efuse->dout);
-clrbits_le32(&efuse->ctrl, RK3399_STROBE);
-udelay(1);
-
-memcpy(&bytes[i], &out_value, RK3399_BYTES_PER_FUSE);
-i += RK3399_BYTES_PER_FUSE;
+	
+	
+	return 0;
+	
 }
 
-/* Switch to standby mode */
-writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
 
-memcpy(buf, bytes + addr_offset, size);
+static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size){
+	printf("inside efuse-write function\n");
+	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
+	struct rockchip_efuse_regs *efuse =(struct rockchip_efuse_regs *)plat->base;
+	
+	if(plat==NULL){
+		printf("inside boot_efuse_write plat is NULL write failed\n");
+		return -EINVAL;
+	}
+	unsigned int addr_start, addr_end, addr_offset;
+	//u32 out_value;
+	u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
+	u32 i = 0;
+	u32 addr;
+	u32 integer=0;
+	addr_start = offset / RK3399_BYTES_PER_FUSE;
+	addr_offset = offset % RK3399_BYTES_PER_FUSE;
+	addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
 
-return 0;
+	/* cap to the size of the efuse block */
+	if (addr_end > RK3399_NFUSES)
+		addr_end = RK3399_NFUSES;
+
+	printf("addr start: %u\n,addr offset: %u,addr end: %u\n",addr_start,addr_offset,addr_end);
+
+	writel(RK3399_STROBE | RK3399_PGENB |RK3399_PS | RK3399_STROBSFTSEL | RK3399_RSB ,
+		&efuse->ctrl);
+   	printf("current status during efuse write is  0x%08x \n",efuse->ctrl);
+
+	puts("in efuse_write printing bufffer\n");
+
+	for(int i=addr_start;i<addr_end;i++){
+		printf("%c\t",((char*)buf)[i]);
+		if((addr_start-i)%2==0){
+			puts("\n");
+		}
+	}
+
+	udelay(1);
+	
+
+	/*
+		32 iterations -> 
+	*/
+	for (addr = addr_start; addr < addr_end; addr++) {
+		setbits_le32(&efuse->ctrl,
+			     RK3399_STROBE | (addr << RK3399_A_SHIFT));
+		udelay(1);
+
+		writel(*((const u32 *)buf+i),&efuse->ctrl+i);
+		printf("wrote 0x%08x\t",*((const u32 *)buf+i));
+		integer=readl(&efuse->ctrl+i);
+
+		printf("read 0x%08x\t",integer);
+		clrbits_le32(&efuse->ctrl, RK3399_STROBE);
+		udelay(1);
+
+		memcpy(&bytes, &efuse->dout, RK3399_BYTES_PER_FUSE);
+		i +=1; 
+		//i+=RK3399_BYTES_PER_FUSE;
+		
+			puts("\n");
+		
+	}
+
+	/* Switch to standby mode */
+	writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
+
+	printf("addr offset is %u\n",addr_offset);
+	//memcpy(bytes + addr_offset,buf, size);
+
+	return 0;
+}
+static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size){
+	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
+	struct rockchip_efuse_regs *efuse =(struct rockchip_efuse_regs *)plat->base;
+
+	unsigned int addr_start, addr_end, addr_offset;
+	u32 out_value;
+	u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
+	int i = 0;
+	u32 addr;
+
+	addr_start = offset / RK3399_BYTES_PER_FUSE;
+	addr_offset = offset % RK3399_BYTES_PER_FUSE;
+	addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
+
+	/* cap to the size of the efuse block */
+	if (addr_end > RK3399_NFUSES)
+	addr_end = RK3399_NFUSES;
+
+	printf("addr start: %u\n,addr offset: %u,addr end: %u\n",addr_start,addr_offset,addr_end);
+
+
+	writel(RK3399_LOAD | RK3399_PGENB | RK3399_STROBSFTSEL | RK3399_RSB,
+	&efuse->ctrl);
+
+	printf("current status during efuse read is 0x%08x\n",efuse->ctrl);
+
+	udelay(1);
+	for (addr = addr_start; addr < addr_end; addr++) {
+		setbits_le32(&efuse->ctrl,
+		RK3399_STROBE | (addr << RK3399_A_SHIFT));
+		udelay(1);
+		out_value = readl(&efuse->dout);
+		clrbits_le32(&efuse->ctrl, RK3399_STROBE);
+		udelay(1);
+
+		memcpy(&bytes[i], &out_value, RK3399_BYTES_PER_FUSE);
+		i += RK3399_BYTES_PER_FUSE;
+	}
+
+	/* Switch to standby mode */
+	writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
+
+	memcpy(buf, bytes + addr_offset, size);
+
+	return 0;
 }
 
 
@@ -738,9 +847,9 @@ int do_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	loff_t pos;
 	loff_t len_read;
 	int ret;
-	//int iRet=0;
-	// char image_bytes[4]={0};
-	// char *efuse_data=NULL;
+	int iRet=0;
+	char image_bytes[4]={0};
+	char *efuse_data=NULL;
 	unsigned long time;
 	//void* image_buffer=NULL;
 	char *ep;
@@ -787,49 +896,74 @@ int do_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 
 	time = get_timer(0);
 
-	// if(strcmp(filename,kernel_image)==0 ){
-	// 		printf("<->-<->-<->-<->- Entered the comparsion space -<->-<->-<->-<->\n");
-	// 		fs_read_into_buff(filename,image_buffer,addr,pos,bytes,&len_read);
-	// 		if(image_buffer!=NULL){
-	// 			for(int i=0;i<=3;i++){
-	// 				if(((char*)(image_buffer))[len_read-1-i]=='\0'){
-	// 					printf("0x0000 0000\n");
+	if(strcmp(filename,kernel_image)==0 ){
+			printf("<->-<->-<->-<->- Entered the comparsion space -<->-<->-<->-<->\n");
+			// fs_read_into_buff(filename,image_buffer,addr,pos,bytes,&len_read);
+			// if(image_buffer!=NULL){
+			// 	for(int i=0;i<=3;i++){
+			// 		if(((char*)(image_buffer))[len_read-1-i]=='\0'){
+			// 			printf("0x0000 0000\n");
 						
-	// 				}
-	// 				else{
-	// 					printf("%c\n",((char* )(image_buffer))[len_read-1-i]);
-	// 				}
-	// 				image_bytes[i]=((char*)(image_buffer))[len_read-1-i];
-	// 			}
-	// 		}
+			// 		}
+			// 		else{
+			// 			printf("%c\n",((char* )(image_buffer))[len_read-1-i]);
+			// 		}
+			// 		image_bytes[i]=((char*)(image_buffer))[len_read-1-i];
+			// 	}
+			// }
 			
-	// 		unmap_sysmem(image_buffer);
+			// unmap_sysmem(image_buffer);
 	
-	// 		iRet=read_public_key(efuse_data);
-	// 		if(iRet==-EINVAL){
-	// 			printf("couldn' read public key fail.............\n");
-	// 		}
-	// 		else{
-	// 			printf("public key read success fully\n");
-	// 		}
+
+			printf("1st process of reading -------------------------------------------\n");
+			puts("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+			iRet=read_public_key(efuse_data);
+			if(iRet==-EINVAL){
+				printf("couldn' read public key fail.............\n");
+			}
+			else{
+				printf("public key read success fully\n");
+			}
+
+			printf("2nd proces of writing -------------------------------------------\n");
+			puts("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+			
+			iRet=write_public_key(efuse_data);
+			if(iRet==-EINVAL){
+				printf("couldn' write public key fail.............\n");
+			}
+			else{
+				printf("public key write success fully\n");
+			}
+
+			printf("3rd process of reading -------------------------------------------\n");
+			puts("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+			
+			iRet=read_public_key(efuse_data);
+			if(iRet==-EINVAL){
+				printf("couldn' read public key fail.............\n");
+			}
+			else{
+				printf("public key read success fully\n");
+			}
 			
 
-	// 		for(int i=0;i<4;i++){
+			for(int i=0;i<4;i++){
 
-	// 			// if(efuse_data[i]==image_bytes[i]){
-	// 			// 	printf("index %d matched\n",i);
-	// 			// }
-	// 			// else{
-	// 			// 	printf("index %d unmatched\n",i);
-	// 			// }
-	// 			if(image_bytes[i]=='\0'){
-	// 				printf("0x0000 0000\n");
-	// 			}
-	// 			else{
-	// 				printf("%c\n",image_bytes[i]);
-	// 			}
-	// 		}
-	// }
+				// if(efuse_data[i]==image_bytes[i]){
+				// 	printf("index %d matched\n",i);
+				// }
+				// else{
+				// 	printf("index %d unmatched\n",i);
+				// }
+				if(image_bytes[i]=='\0'){
+					printf("0x0000 0000\n");
+				}
+				else{
+					printf("%c\n",image_bytes[i]);
+				}
+			}
+	}
 	
 	ret = fs_read(filename, addr, pos, bytes, &len_read);
 	time = get_timer(time);

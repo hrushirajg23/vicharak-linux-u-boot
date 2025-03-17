@@ -103,7 +103,7 @@ struct rockchip_efuse_platdata {
 	struct clk *clk;
 };
 
-struct efuse_rw_data {
-	EFUSE_READ read_ptr;
-	EFUSE_WRITE write_ptr;
-};
+// struct efuse_rw_data {
+// 	EFUSE_READ read_ptr;
+// 	//EFUSE_WRITE write_ptr;
+// };
