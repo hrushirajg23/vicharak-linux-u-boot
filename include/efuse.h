@@ -58,6 +58,7 @@
 #define RK3399_STROBSFTSEL      BIT(9)
 #define RK3399_RSB              BIT(7)
 #define RK3399_PD               BIT(5)
+#define RK3399_PS 			  BIT(4)
 #define RK3399_PGENB            BIT(3)
 #define RK3399_LOAD             BIT(2)
 #define RK3399_STROBE           BIT(1)
@@ -80,6 +81,8 @@
 #define RK3328_AUTO_RD		BIT(1)
 
 typedef int (*EFUSE_READ)(struct udevice *dev, int offset, void *buf, int size);
+typedef int (*EFUSE_WRITE)(struct udevice *dev,int offset,const 	void *buf,int size);
+
 
 struct rockchip_efuse_regs {
 	u32 ctrl;      /* 0x00  efuse control register */
@@ -98,4 +101,9 @@ struct rockchip_efuse_regs {
 struct rockchip_efuse_platdata {
 	void __iomem *base;
 	struct clk *clk;
+};
+
+struct efuse_rw_data {
+	EFUSE_READ read_ptr;
+	EFUSE_WRITE write_ptr;
 };

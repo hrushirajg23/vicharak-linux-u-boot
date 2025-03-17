@@ -18,8 +18,19 @@
 #include <div64.h>
 #include <linux/math64.h>
 #include <efuse.h>
+#include <u-boot/rsa.h>
+
+#include <u-boot/sha256.h>
+#include <hash.h>	
+#include <malloc.h>
+
+
 
 DECLARE_GLOBAL_DATA_PTR;
+
+
+#define SIGNATURE_SIZE 256
+
 
 static struct blk_desc *fs_dev_desc;
 static int fs_dev_part;
@@ -28,14 +39,23 @@ static int fs_type = FS_TYPE_ANY;
 const char *kernel_image="/Image-5.10.233-vaaman";
 
 
+
 static char buffer[128];
 static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size);
 int read_public_key(char* ptr);
 void fs_read_into_buff(const char *filename,void* buf, ulong addr, loff_t offset, loff_t len,
 	loff_t *actread);
 
+	struct key_prop {
+		uint8_t key[256]; // Assuming a 2048-bit RSA key
+	 };
 
-
+void compute_sha256(const void *data, size_t len, uint8_t *out_hash) {
+	sha256_context ctx;
+	sha256_starts(&ctx);
+	sha256_update(&ctx, data, len);
+	sha256_finish(&ctx, out_hash);
+	}
 static inline int fs_probe_unsupported(struct blk_desc *fs_dev_desc,
 				      disk_partition_t *fs_partition)
 {
@@ -403,6 +423,19 @@ int fs_size(const char *filename, loff_t *size)
 	return ret;
 }
 
+
+void extract_signature(uint8_t *image, size_t image_size, uint8_t *signature) {
+	memcpy(signature, image + (image_size - SIGNATURE_SIZE), SIGNATURE_SIZE);
+ }
+
+
+//  int verify_signature(const uint8_t *signature, size_t sig_len, 
+// 	const uint8_t *hash, size_t hash_len,
+// 	const struct key_prop *pubkey) {
+// int ret = rsa_verify(pubkey, signature, sig_len, hash, hash_len);
+// return ret == 0;  // 0 means success
+// }
+
 int fs_read(const char *filename, ulong addr, loff_t offset, loff_t len,
 	    loff_t *actread)
 {
@@ -412,8 +445,9 @@ int fs_read(const char *filename, ulong addr, loff_t offset, loff_t len,
 	int iRet=0;
 	char image_bytes[4]={0};
 	char *efuse_data=NULL;
-//	unsigned long time;
-	//void* image_buffer=NULL;
+	uint8_t kernel_hash[32]={0};
+	// uint8_t signature[SIGNATURE_SIZE];
+	// struct key_prop pubkey;
 
 	/*
 	 * We don't actually know how many bytes are being read, since len==0
@@ -429,22 +463,30 @@ int fs_read(const char *filename, ulong addr, loff_t offset, loff_t len,
 			printf("<->-<->-<->-<->- Entered the comparsion space -<->-<->-<->-<->\n");
 			//fs_read_into_buff(filename,image_buffer,addr,pos,bytes,&len_read);
 			printf("actread value is %lld\n",(*actread));
-			if(buf!=NULL){
-				for(int i=3;i>=0;i--){
-					if(((char*)(buf))[(*actread)-1-i]=='\0'){
-						printf("0x0000 0000\n");
+			// if(buf!=NULL){
+			// 	for(int i=3;i>=0;i--){
+			// 		if(((char*)(buf))[(*actread)-1-i]=='\0'){
+			// 			printf("0x0000 0000\n");
 						
-					}
-					else{
-						printf("%c\n",((char* )(buf))[(*actread)-1-i]);
-					}
-					image_bytes[i]=((char*)(buf))[(*actread)-1-i];
-				}
-			}
+			// 		}
+			// 		else{
+			// 			printf("%c\n",((char* )(buf))[(*actread)-1-i]);
+			// 		}
+			// 		image_bytes[i]=((char*)(buf))[(*actread)-1-i];
+			// 	}
+			// }
 			
 			// //unmap_sysmem(image_buffer);
-	
+
+			//compute_sha256(buf,(*actread),kernel_hash);
+			for(int i=0;i<32;i++){
+				printf("hash[%d] is %d\n",i,kernel_hash[i]);
+			}
+			//extract_signature(buf,(*actread),signature);
+
 			iRet=read_public_key(efuse_data);
+			
+			
 			if(iRet==-EINVAL){
 				printf("couldn' read public key fail.............\n");
 			}
@@ -452,6 +494,18 @@ int fs_read(const char *filename, ulong addr, loff_t offset, loff_t len,
 				printf("public key read success fully\n");
 			}
 			
+
+			// for(int i=0;i<256;i++){
+			// 	pubkey.key[i]=(uint8_t*)efuse_data[i];
+			// }
+			// if(verify_signature(signature,SIGNATURE_SIZE,kernel_hash,32,pubkey)){
+			// 	printf(" Kernel Verified - Booting\n");
+			// 	return 0;
+			// }
+			// else{
+			// 	printf(" Kernel Verification Failed - Aborting\n");
+        		// 	return 1;
+			// }
 
 			for(int i=0;i<4;i++){
 
