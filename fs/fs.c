@@ -19,7 +19,6 @@
 #include <linux/math64.h>
 #include <efuse.h>
 #include <u-boot/rsa.h>
-
 #include <u-boot/sha256.h>
 #include <hash.h>	
 #include <malloc.h>
@@ -28,22 +27,17 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-
 #define SIGNATURE_SIZE 256
-
 
 static struct blk_desc *fs_dev_desc;
 static int fs_dev_part;
 static disk_partition_t fs_partition;
 static int fs_type = FS_TYPE_ANY;
 const char *kernel_image="/Image-5.10.233-vaaman";
-
-const char* kern_image="/Image-4.19.232-vaaman";
-
-
 static char buffer[128];
+static u32 integer_array[32];
 static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size);
-static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size);
+//static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size);
 int read_public_key(char* ptr);
 int write_public_key(char* ptr);
 void fs_read_into_buff(const char *filename,void* buf, ulong addr, loff_t offset, loff_t len,
@@ -633,6 +627,7 @@ int read_public_key(char* ptr){
 	struct udevice* dev;
 	int ret,offset=0;
 	ptr=buffer;
+	int* iptr=(int*)buffer;
 	ret = uclass_get_device_by_driver(UCLASS_MISC,
 					  DM_GET_DRIVER(rockchip_efuse), &dev);
 	if (ret) {
@@ -645,20 +640,46 @@ int read_public_key(char* ptr){
 	if(ret)
 	printf("reading efuse-failed miserably\n");
 
-	puts("printing efuse buffer...........................\n");
-	for(int i=0;i<sizeof(buffer);i++){
-		if(buffer[i]=='\0'){
-			puts("\0x00000000\t");
-		}
-		else{
-			printf("%c\t",buffer[i]);
-		}
-		if(i%2!=0){
-			puts("\n");
-		}
+	// puts("printing efuse buffer...........................\n");
+	// for(int i=0;i<sizeof(buffer);i++){
+	// 	if(buffer[i]=='\0'){
+	// 		puts("\0x00000000\t");
+	// 	}
+	// 	else{
+	// 		printf("%c\t",buffer[i]);
+	// 	}
+	// 	if(i%2!=0){
+	// 		puts("\n");
+	// 	}
+	// }
+
+	puts("---------------(integer formatted):::::::::printing efuse buffer::::::::::::\n");
+	// for(int i=0;i<sizeof(buffer)/sizeof(int);i++){
+	// 	printf("index: %d , data:  0x%x \n",i,iptr[i]);
+	// }
+
+
+    for(int i=0;i<sizeof(buffer)/sizeof(int);i++){
+        printf("i: %d, buffer[i]: 0x%x\n",i,iptr[i]);
+        puts("\n");
+		char* cptr=(char*)(iptr+i);
+        printf("[\t");
+        for(int j=0;j<sizeof(int);j++){
+            printf("{ j: %d, char[j]: %d }\t",j,cptr[j]);
+        }
+        puts("]\n");
+		puts("\n");
+    }
+
+
+	puts("---------------(integer formatted):::::::::printing efuse buffer::::::::::::\n");
+	for(int i=0;i<sizeof(integer_array)/sizeof(u32);i++){
+		printf("[ i: %d, integer_array[i]: %u , integer_array[i]: %x\n",i,integer_array[i],integer_array[i]);
+
 	}
 
 
+	
 	
 	return 0;
 	
@@ -666,30 +687,28 @@ int read_public_key(char* ptr){
 
 
 
-int write_public_key(char* ptr){
+// int write_public_key(char* ptr){
 
-	struct udevice* dev;
-	int ret,offset=0;
-	int i=1;
-	ptr=buffer;
-	ret = uclass_get_device_by_driver(UCLASS_MISC,
-					  DM_GET_DRIVER(rockchip_efuse), &dev);
-	if (ret) {
-		printf("%s: no misc-device found\n", __func__);
-		return -EINVAL;
-	}
+// 	struct udevice* dev;
+// 	int ret,offset=0;
+// 	//int i=1;
+// 	ptr=buffer;
+// 	ret = uclass_get_device_by_driver(UCLASS_MISC,
+// 					  DM_GET_DRIVER(rockchip_efuse), &dev);
+// 	if (ret) {
+// 		printf("%s: no misc-device found\n", __func__);
+// 		return -EINVAL;
+// 	}
 	
-
-	for(i=0;i<sizeof(buffer);i++){
-		buffer[i]='b';
-	}
-	ret=boot_efuse_write(dev,offset,buffer,sizeof(buffer));
+	
+// 	memset(buffer, 'a', sizeof(buffer));
+// 	ret=boot_efuse_write(dev,offset,buffer,sizeof(buffer));
 
 	
 	
-	return 0;
+// 	return 0;
 	
-}
+// }
 
 
 // static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size){
@@ -794,6 +813,10 @@ int write_public_key(char* ptr){
 
 static int boot_efuse_write(struct udevice *dev, int offset, void *buf, int size) {
 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
+// static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size){
+// 	printf("inside efuse-write function\n");
+// 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
+// 	struct rockchip_efuse_regs *efuse =(struct rockchip_efuse_regs *)plat->base;
 	
 	if (!plat) {
 	    printf("boot_efuse_write: plat is NULL, write failed\n");
@@ -892,6 +915,60 @@ static int boot_efuse_write(struct udevice *dev, int offset, void *buf, int size
 // }
 
 static int boot_efuse_read(struct udevice *dev, int offset, void *buf, int size) {
+// 	if(plat==NULL){
+// 		printf("inside boot_efuse_write plat is NULL write failed\n");
+// 		return -EINVAL;
+// 	}
+// 	unsigned int addr_start, addr_end, addr_offset;
+// 	//u32 out_value;
+// 	// u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
+// 	u32 i = 0;
+// 	//u32 addr;
+// 	// u32 integer=0;
+// 	addr_start = offset / RK3399_BYTES_PER_FUSE;
+// 	addr_offset = offset % RK3399_BYTES_PER_FUSE;
+// 	addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
+
+// 	/* cap to the size of the efuse block */
+// 	if (addr_end > RK3399_NFUSES)
+// 		addr_end = RK3399_NFUSES;
+
+// 	printf("addr start: %u\n,addr offset: %u,addr end: %u\n",addr_start,addr_offset,addr_end);
+
+	
+// 	writel(RK3399_STROBE | RK3399_RSB |RK3399_PS | RK3399_STROBSFTSEL  ,
+// 		&efuse->ctrl);
+//    	printf("current status during efuse write is  0x%08x \n",efuse->ctrl);
+
+// 	puts("in efuse_write printing bufffer\n");
+
+// 	for(addr=addr_start;i<addr_end;i++){
+// 		printf("%c\t",((char*)buf)[i]);
+// 		if((addr_start-i)%2==0){
+// 			puts("\n");
+// 		}
+// 	}
+
+// 	udelay(1);
+	
+// 	printf("value of efuse_Ctrl is %u and value of &efuse_ctrl is %p\n",efuse->ctrl,&efuse->ctrl);
+
+// 	for(i=0;i<32;i++){
+// 		printf("for i: %u , &efuse->ctrl+i is %p and & its value is %u\n",i,&efuse->ctrl+i,*(&efuse->ctrl+i));
+// 	}
+	
+
+// 	/* Switch to standby mode */
+// 	writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
+
+// 	printf("addr offset is %u\n",addr_offset);
+// 	//memcpy(bytes + addr_offset,buf, size);
+
+// 	return 0;
+// }
+
+
+static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size){
 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
  
 	if (!plat) {
@@ -902,43 +979,45 @@ static int boot_efuse_read(struct udevice *dev, int offset, void *buf, int size)
 	struct rockchip_efuse_regs *efuse = (struct rockchip_efuse_regs *)plat->base;
 	unsigned int addr_start, addr_end, addr_offset;
 	u32 out_value;
-	u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE] = {0};
-	int i = 0;
-	u32 addr;
- 
+	u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
+	
+	//int i = 0;
+	u32 addr=0;
+
 	addr_start = offset / RK3399_BYTES_PER_FUSE;
 	addr_offset = offset % RK3399_BYTES_PER_FUSE;
 	addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
  
 	if (addr_end > RK3399_NFUSES)
-	    addr_end = RK3399_NFUSES;
- 
-	printf("addr start: %u, addr offset: %u, addr end: %u\n", addr_start, addr_offset, addr_end);
- 
-	/* Enable eFUSE read mode */
-	writel(RK3399_PGENB | RK3399_STROBSFTSEL | RK3399_RSB, &efuse->ctrl);
+	addr_end = RK3399_NFUSES;
+
+	printf("addr start: %u\n,addr offset: %u,addr end: %u\n",addr_start,addr_offset,addr_end);
+
+	writel( RK3399_LOAD | RK3399_PGENB | RK3399_STROBSFTSEL | RK3399_RSB ,
+	&efuse->ctrl);
+
+	printf("current status during efuse read is 0x%08x\n",efuse->ctrl);
+
 	udelay(1);
- 
-	printf("Current status during efuse read: 0x%08x\n", readl(&efuse->ctrl));
- 
-	/* Read eFUSE data */
-	for (addr = addr_start; addr < addr_end; addr++) {
-	    setbits_le32(&efuse->ctrl, RK3399_STROBE | ((addr & 0xFF) << RK3399_A_SHIFT));
-	    udelay(1);
- 
-	    out_value = readl(&efuse->dout);
-	    printf("Read addr 0x%08x: 0x%08x\n", addr, out_value);
- 
-	    clrbits_le32(&efuse->ctrl, RK3399_STROBE);
-	    udelay(1);
- 
-	    if (i + RK3399_BYTES_PER_FUSE <= sizeof(bytes)) {
-		   *(u32 *)(bytes + i) = out_value;
-		   i += RK3399_BYTES_PER_FUSE;
-	    } else {
-		   printf("Error: Out of bounds access in bytes array!\n");
-		   return -EINVAL;
-	    }
+	for (addr = addr_start; addr < 32; addr++) {
+		
+		setbits_le32(&efuse->ctrl,
+		RK3399_STROBE | (addr << RK3399_A_SHIFT));
+		/*
+		
+			in efuse control register, addresses can be provided in the range 
+			0 to 1023 i.e from address pins A0 to A9 since 2^10=1024
+			And in the controller register start from bit [16 - 25]
+			hence it is done addr << RK3399_A_SHIFT, where RK3399_A_SHIFT = 16
+		
+		*/
+		udelay(1);
+		out_value = readl(&efuse->dout);
+		clrbits_le32(&efuse->ctrl, RK3399_STROBE);
+		udelay(1);
+		printf("[ addr = %d, out_value = 0x%x \n ",addr,out_value);
+		memcpy(&bytes[addr*sizeof(u32)], &out_value, RK3399_BYTES_PER_FUSE);
+		memcpy(&integer_array[addr],&out_value,sizeof(u32));
 	}
  
 	/* Switch to standby mode */
@@ -951,31 +1030,8 @@ static int boot_efuse_read(struct udevice *dev, int offset, void *buf, int size)
  
 	memcpy(buf, bytes + addr_offset, size);
 	return 0;
- }
- 
-// void fs_read_into_buff(const char *filename,void* buf, ulong addr, loff_t offset, loff_t len,
-// 	loff_t *actread)
-// {
-//  struct fstype_info *info = fs_get_info(fs_type);
-//  //void *buf;
-//  int ret;
+}
 
-//  /*
-//   * We don't actually know how many bytes are being read, since len==0
-//   * means read the whole file.
-//   */
-//  buf = map_sysmem(addr, len);
- 
-//  ret = info->read(filename, buf, offset, len, actread);
-//  //unmap_sysmem(buf);
-
-//  /* If we requested a specific number of bytes, check we got it */
-//  if (ret == 0 && len && *actread != len)
-// 	 printf("** %s shorter than offset + len **\n", filename);
-//  fs_close();
-
-	
-// }
 
 
 int do_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
@@ -1066,27 +1122,27 @@ int do_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 				printf("public key read success fully\n");
 			}
 
-			printf("2nd proces of writing -------------------------------------------\n");
-			puts("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+			// printf("2nd proces of writing -------------------------------------------\n");
+			// puts("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 			
-			iRet=write_public_key(efuse_data);
-			if(iRet==-EINVAL){
-				printf("couldn' write public key fail.............\n");
-			}
-			else{
-				printf("public key write success fully\n");
-			}
+			// iRet=write_public_key(efuse_data);
+			// if(iRet==-EINVAL){
+			// 	printf("couldn' write public key fail.............\n");
+			// }
+			// else{
+			// 	printf("public key write success fully\n");
+			// }
 
-			printf("3rd process of reading -------------------------------------------\n");
-			puts("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+			// printf("3rd process of reading -------------------------------------------\n");
+			// puts("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 			
-			iRet=read_public_key(efuse_data);
-			if(iRet==-EINVAL){
-				printf("couldn' read public key fail.............\n");
-			}
-			else{
-				printf("public key read success fully\n");
-			}
+			// iRet=read_public_key(efuse_data);
+			// if(iRet==-EINVAL){
+			// 	printf("couldn' read public key fail.............\n");
+			// }
+			// else{
+			// 	printf("public key read success fully\n");
+			// }
 			
 
 			for(int i=0;i<4;i++){
