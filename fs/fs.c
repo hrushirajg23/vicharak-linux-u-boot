@@ -23,8 +23,6 @@
 #include <hash.h>	
 #include <malloc.h>
 
-
-
 DECLARE_GLOBAL_DATA_PTR;
 
 #define SIGNATURE_SIZE 256
@@ -712,158 +710,8 @@ int write_public_key(char* ptr){
 }
 
 
-// static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size){
-// 	printf("inside efuse-write function\n");
-// 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
-// 	struct rockchip_efuse_regs *efuse =(struct rockchip_efuse_regs *)plat->base;
-	
-
-// 	printf("base address is %lu\n",(unsigned long)plat->base);
-// 	if(plat==NULL){
-// 		printf("inside boot_efuse_write plat is NULL write failed\n");
-// 		return -EINVAL;
-// 	}
-// 	unsigned int addr_start, addr_end, addr_offset;
-// 	//u32 out_value;
-// 	u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
-// 	u32 i = 0;
-// 	u32 addr;
-// 	u32 integer=0;
-// 	addr_start = offset / RK3399_BYTES_PER_FUSE;
-// 	addr_offset = offset % RK3399_BYTES_PER_FUSE;
-// 	addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
-
-// 	/* cap to the size of the efuse block */
-// 	if (addr_end > RK3399_NFUSES)
-// 		addr_end = RK3399_NFUSES;
-
-// 	printf("addr start: %u\n,addr offset: %u,addr end: %u\n",addr_start,addr_offset,addr_end);
-
-// 	writel(RK3399_STROBE | RK3399_PGENB |RK3399_PS | RK3399_STROBSFTSEL | RK3399_RSB ,
-// 		&efuse->ctrl);
-//    	printf("current status during efuse write is  0x%08x \n",efuse->ctrl);
-
-// 	puts("in efuse_write printing bufffer\n");
-
-// 	for(int i=addr_start;i<addr_end;i++){
-// 		printf("%c\t",((char*)buf)[i]);
-// 		if((addr_start-i)%2==0){
-// 			puts("\n");
-// 		}
-// 	}
-
-// 	udelay(1);
-	
-
-// 	/*
-// 		32 iterations -> 
-// 	*/
-// 	printf("writing memcpy_toio on efuse\n");
-
-// 	for (int i = 0; i < size; i += 4) {
-// 		writel(*(u32 *)(buf + i), &efuse->ctrl);
-// 		udelay(1);
-// 	}
-// 	printf("address of efuse->ctrl is %p\n",&efuse->ctrl);
-	
-// 	for (addr = addr_start; addr < addr_end; addr++) {
-// 		setbits_le32(&efuse->ctrl,
-// 			     RK3399_STROBE | (addr << RK3399_A_SHIFT));
-// 		udelay(1);
-		
-// 		// if(i>4){
-
-// 		// 	writel(*((const u32 *)buf+i),&efuse->ctrl+i);
-// 		// 	printf("wrote 0x%08x\t",*((const u32 *)buf+i));
-// 		// }
-// 		integer = readl((void __iomem *)((uintptr_t)&efuse->ctrl + i * 4));
-
-		
-// 		printf("read 0x%08x\t",integer);
-// 		clrbits_le32(&efuse->ctrl, RK3399_STROBE);
-// 		udelay(1);
-
-// 		memcpy(&bytes, &efuse->ctrl, RK3399_BYTES_PER_FUSE);
-		
-// 		i +=1; 
-// 		//i+=RK3399_BYTES_PER_FUSE;
-		
-// 			puts("\n");
-		
-// 	}
-
-// 	/* Switch to standby mode */
-// 	writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
-
-// 	printf("addr offset is %u\n",addr_offset);
-// 	//memcpy(bytes + addr_offset,buf, size);
-// 	printf("presenting bytes  array----------------------------------------\n");
-
-// 	for(integer=0;integer < sizeof(bytes);integer++){
-// 		printf("%d\n",bytes[integer]);
-// 	}
-
-// 	printf("presenting bytes  array----------------------------------------\n");
-
-// 	for(integer=0;integer < sizeof(bytes);integer++){
-// 		printf("%x\n",bytes[integer]);
-// 	}
-// 	return 0;
-// }
 
 
-// static int boot_efuse_write(struct udevice *dev, int offset, void *buf, int size) {
-// 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
-// // static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size){
-// // 	printf("inside efuse-write function\n");
-// // 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
-// // 	struct rockchip_efuse_regs *efuse =(struct rockchip_efuse_regs *)plat->base;
-	
-// 	if (!plat) {
-// 	    printf("boot_efuse_write: plat is NULL, write failed\n");
-// 	    return -EINVAL;
-// 	}
- 
-// 	struct rockchip_efuse_regs *efuse = (struct rockchip_efuse_regs *)plat->base;
-// 	unsigned int addr_start, addr_end;//addr_offset;
-// 	u32 addr;
- 
-// 	addr_start = offset / RK3399_BYTES_PER_FUSE;
-// 	//addr_offset = offset % RK3399_BYTES_PER_FUSE;
-// 	addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
- 
-// 	if (addr_end > RK3399_NFUSES)
-// 	    addr_end = RK3399_NFUSES;
- 
-// 	/* Enable eFUSE programming mode */
-// 	writel(RK3399_STROBE | RK3399_PGENB | RK3399_PS | RK3399_STROBSFTSEL | RK3399_RSB, &efuse->ctrl);
-// 	udelay(1);
- 
-// 	printf("Writing to efuse...\n");
-	
-// 	/* Write the buffer to the eFUSE register */
-// 	for (addr = addr_start; addr < addr_end; addr++) {
-// 	    u32 data = *(u32 *)(buf + (addr * 4));
- 
-// 	    writel(data, &efuse->ctrl);  // Write 32-bit value
-// 	    udelay(1);
- 
-// 	    /* Trigger write */
-// 	    setbits_le32(&efuse->ctrl, RK3399_STROBE | (addr << RK3399_A_SHIFT));
-// 	    udelay(1);
-// 	    clrbits_le32(&efuse->ctrl, RK3399_STROBE);
-// 	    udelay(1);
- 
-// 	    /* Read back to verify */
-// 	    u32 verify = readl(&efuse->ctrl);
-// 	    printf("Wrote: 0x%08x, Read: 0x%08x\n", data, verify);
-// 	}
- 
-// 	/* Switch to standby mode */
-// 	writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
-	
-// 	return 0;
-//  }
 
 
 
@@ -940,7 +788,6 @@ static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size){
 }
 
 
-
 static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size){
 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
  
@@ -953,12 +800,10 @@ static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size)
 	unsigned int addr_start, addr_end, addr_offset;
 	
 	//value trid earlier , 1) 78, 2) 75 , 3)INT_MAX 4) 0 : 11, 0: 12 
-	//5) 35: 13, 35: 14
-	u32 out_value=35;
+	//5) 35: 13, 35: 14 , 35 : 15 
+	// 6) 0xFFFFFFFF : 15, 16 ,7) 0xFF : 20
+	u8 out_value=0xFF;
 
-	//u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
-	
-	//int i = 0;
 	u32 addr=0;
 
 	addr_start = offset / RK3399_BYTES_PER_FUSE;
@@ -973,46 +818,185 @@ static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size)
 	writel( RK3399_PS | RK3399_STROBSFTSEL | RK3399_RSB ,
 	&efuse->ctrl);
 
-	printf("current status during efuse read is 0x%08x\n",efuse->ctrl);
+	printf("current status during efuse read is 0x%08x\n",(efuse->ctrl));
 
-	addr=14;
-	// addr tried -> 1) 30, 2) 10  3) 10 4) 11 5) 12 6) 13 7) 14
+	addr=19;
+	// addr tried -> 1) 30, 2) 10  3) 10 4) 11 5) 12 6) 13 7) 14 8) 15 9) 18 10) 20
 
 	udelay(15);
-//	for (addr = addr_start; addr < 32; addr++) {
-
-		setbits_le32(&efuse->ctrl,
-		RK3399_STROBE | (addr << RK3399_A_SHIFT));
-		/*
-		
-			in efuse control register, addresses can be provided in the range 
-			0 to 1023 i.e from address pins A0 to A9 since 2^10=1024
-			And in the controller register start from bit [16 - 25]
-			hence it is done addr << RK3399_A_SHIFT, where RK3399_A_SHIFT = 16
-		
-		*/
-		udelay(20);
-		writel(out_value,&efuse->dout2);
-		udelay(20);
-		clrbits_le32(&efuse->ctrl, RK3399_STROBE);
-		udelay(20);
-
-		printf("[ addr = %d, out_value = 0x%x \n ",addr,out_value);
-//		memcpy(&bytes[addr*sizeof(u32)], &out_value, RK3399_BYTES_PER_FUSE);
-//		memcpy(&integer_array[addr],&out_value,sizeof(u32));
-//	}
+	setbits_8((volatile unsigned char*)&efuse->ctrl,
+	RK3399_STROBE | (addr << RK3399_A_SHIFT));
+	udelay(20);
+	writeb(out_value,(volatile unsigned char*)&efuse->dout2);
+	udelay(20);
+	clrbits_le32(&efuse->ctrl, RK3399_STROBE);
+	udelay(20);
+	printf("[ addr = %d, out_value = 0x%x \n ",addr,out_value);
  
 	/* Switch to standby mode */
 	writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
- 
+	udelay(10);
 	if (!buf) {
 	    printf("Error: buf is NULL, cannot copy data!\n");
 	    return -EINVAL;
 	}
  
-	//memcpy(buf, bytes + addr_offset, size);
+	
 	return 0;
 }
+
+
+
+
+// static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size){
+// 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
+ 
+// 	if (!plat) {
+// 	    printf("boot_efuse_read: plat is NULL, read failed\n");
+// 	    return -EINVAL;
+// 	}
+ 
+// 	struct rockchip_efuse_regs *efuse = (struct rockchip_efuse_regs *)plat->base;
+// 	unsigned int addr_start, addr_end, addr_offset;
+	
+// 	//value trid earlier , 1) 78, 2) 75 , 3)INT_MAX 4) 0 : 11, 0: 12 
+// 	//5) 35: 13, 35: 14 , 35 : 15 
+// 	// 6) 0xFFFFFFFF : 15, 16
+// 	u32 out_value=0xFFFFFFFF;
+
+// 	//u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
+	
+// 	//int i = 0;
+// 	u32 addr=0;
+
+// 	addr_start = offset / RK3399_BYTES_PER_FUSE;
+// 	addr_offset = offset % RK3399_BYTES_PER_FUSE;
+// 	addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
+ 
+// 	if (addr_end > RK3399_NFUSES)
+// 	addr_end = RK3399_NFUSES;
+
+// 	printf("addr start: %u\n,addr offset: %u,addr end: %u\n",addr_start,addr_offset,addr_end);
+
+// 	writel( RK3399_PS | RK3399_STROBSFTSEL | RK3399_RSB ,
+// 	&efuse->ctrl);
+
+// 	printf("current status during efuse read is 0x%08x\n",efuse->ctrl);
+
+// 	addr=20;
+// 	// addr tried -> 1) 30, 2) 10  3) 10 4) 11 5) 12 6) 13 7) 14 8) 15
+
+// 	udelay(15);
+// //	for (addr = addr_start; addr < 32; addr++) {
+
+// 		setbits_le32(&efuse->ctrl,
+// 		RK3399_STROBE | (addr << RK3399_A_SHIFT));
+// 		/*
+		
+// 			in efuse control register, addresses can be provided in the range 
+// 			0 to 1023 i.e from address pins A0 to A9 since 2^10=1024
+// 			And in the controller register start from bit [16 - 25]
+// 			hence it is done addr << RK3399_A_SHIFT, where RK3399_A_SHIFT = 16
+		
+// 		*/
+// 		udelay(20);
+// 		writel(out_value,&efuse->dout2);
+// 		udelay(20);
+// 		clrbits_le32(&efuse->ctrl, RK3399_STROBE);
+// 		udelay(20);
+
+// 		printf("[ addr = %d, out_value = 0x%x \n ",addr,out_value);
+// //		memcpy(&bytes[addr*sizeof(u32)], &out_value, RK3399_BYTES_PER_FUSE);
+// //		memcpy(&integer_array[addr],&out_value,sizeof(u32));
+// //	}
+ 
+// 	/* Switch to standby mode */
+// 	writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
+// 	udelay(10);
+// 	if (!buf) {
+// 	    printf("Error: buf is NULL, cannot copy data!\n");
+// 	    return -EINVAL;
+// 	}
+ 
+// 	//memcpy(buf, bytes + addr_offset, size);
+// 	return 0;
+// }
+
+
+
+// static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size){
+// 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
+ 
+// 	if (!plat) {
+// 	    printf("boot_efuse_read: plat is NULL, read failed\n");
+// 	    return -EINVAL;
+// 	}
+ 
+// 	struct rockchip_efuse_regs *efuse = (struct rockchip_efuse_regs *)plat->base;
+// 	unsigned int addr_start, addr_end, addr_offset;
+	
+// 	//value trid earlier , 1) 78, 2) 75 , 3)INT_MAX 4) 0 : 11, 0: 12 
+// 	//5) 35: 13, 35: 14 , 35 : 15 
+// 	// 6) 0xFFFFFFFF : 15, 16
+// 	u32 out_value=0xFFFFFFFF;
+
+// 	//u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
+	
+// 	//int i = 0;
+// 	u32 addr=0;
+
+// 	addr_start = offset / RK3399_BYTES_PER_FUSE;
+// 	addr_offset = offset % RK3399_BYTES_PER_FUSE;
+// 	addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
+ 
+// 	if (addr_end > RK3399_NFUSES)
+// 	addr_end = RK3399_NFUSES;
+
+// 	printf("addr start: %u\n,addr offset: %u,addr end: %u\n",addr_start,addr_offset,addr_end);
+
+// 	writel( RK3399_PS | RK3399_STROBSFTSEL | RK3399_RSB ,
+// 	&efuse->ctrl);
+
+// 	printf("current status during efuse read is 0x%08x\n",efuse->ctrl);
+
+// 	addr=15;
+// 	// addr tried -> 1) 30, 2) 10  3) 10 4) 11 5) 12 6) 13 7) 14 8) 15
+
+// 	udelay(15);
+// //	for (addr = addr_start; addr < 32; addr++) {
+
+// 		setbits_le32(&efuse->ctrl,
+// 		RK3399_STROBE | (addr << RK3399_A_SHIFT));
+// 		/*
+		
+// 			in efuse control register, addresses can be provided in the range 
+// 			0 to 1023 i.e from address pins A0 to A9 since 2^10=1024
+// 			And in the controller register start from bit [16 - 25]
+// 			hence it is done addr << RK3399_A_SHIFT, where RK3399_A_SHIFT = 16
+		
+// 		*/
+// 		udelay(20);
+// 		writel(out_value,&efuse->dout2);
+// 		udelay(20);
+// 		clrbits_le32(&efuse->ctrl, RK3399_STROBE);
+// 		udelay(20);
+
+// 		printf("[ addr = %d, out_value = 0x%x \n ",addr,out_value);
+// //		memcpy(&bytes[addr*sizeof(u32)], &out_value, RK3399_BYTES_PER_FUSE);
+// //		memcpy(&integer_array[addr],&out_value,sizeof(u32));
+// //	}
+ 
+// 	/* Switch to standby mode */
+// 	writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
+// 	udelay(10);
+// 	if (!buf) {
+// 	    printf("Error: buf is NULL, cannot copy data!\n");
+// 	    return -EINVAL;
+// 	}
+ 
+// 	//memcpy(buf, bytes + addr_offset, size);
+// 	return 0;
+// }
 
 
 
