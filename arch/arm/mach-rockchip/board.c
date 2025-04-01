@@ -153,6 +153,7 @@ static int rockchip_set_ethaddr(void)
 #ifdef CONFIG_ROCKCHIP_SET_SN
 static int rockchip_set_serialno(void)
 {
+	printf("manual: inside rockchip_set_serial_no(void)\n");
 	u8 low[CPUID_LEN / 2], high[CPUID_LEN / 2];
 	u8 cpuid[CPUID_LEN] = {0};
 	char serialno_str[VENDOR_SN_MAX];
@@ -187,7 +188,7 @@ static int rockchip_set_serialno(void)
 	if (!env_get("serial#")) {
 #if defined(CONFIG_ROCKCHIP_EFUSE) || defined(CONFIG_ROCKCHIP_OTP)
 		struct udevice *dev;
-
+		puts("manual: cpuid is configured\n");
 		/* retrieve the device */
 		if (IS_ENABLED(CONFIG_ROCKCHIP_EFUSE))
 			ret = uclass_get_device_by_driver(UCLASS_MISC,
@@ -210,6 +211,20 @@ static int rockchip_set_serialno(void)
 			       __func__, ret);
 			return ret;
 		}
+		puts("manual: cpuid in chars is >: \n ");
+		for(int i=0;i<CPUID_LEN;i++){
+			printf("%c ",cpuid[i]);
+		}
+		puts("\n");
+		puts("manual: cpuid in dec is >: \n ");
+		for(int i=0;i<CPUID_LEN;i++){
+			printf("%d ",cpuid[i]);
+		}
+		puts("\nmanual: cpuid in hex is >: \n ");
+		for(int i=0;i<CPUID_LEN;i++){
+			printf("%x ",cpuid[i]);
+		}
+		puts("\n");
 #else
 		/* generate random cpuid */
 		for (i = 0; i < CPUID_LEN; i++)
