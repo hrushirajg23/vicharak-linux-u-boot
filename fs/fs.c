@@ -31,7 +31,7 @@ static struct blk_desc *fs_dev_desc;
 static int fs_dev_part;
 static disk_partition_t fs_partition;
 static int fs_type = FS_TYPE_ANY;
-const char *kernel_image="/Image-5.10.233-vaaman";
+const char *kernel_image="/Image-5.10.230-vaaman";
 static char buffer[128];
 static u32 integer_array[32];
 static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size);
@@ -452,7 +452,7 @@ int fs_read(const char *filename, ulong addr, loff_t offset, loff_t len,
 	buf = map_sysmem(addr, len);
 	ret = info->read(filename, buf, offset, len, actread);
 
-	printf("file name is %s length is %ld\n",filename,sizeof(kernel_image));
+	printf("file name is %s length is %ld\n",filename,strlen(kernel_image));
 
 	if(strcmp(filename,kernel_image)==0 ){
 			printf("<->-<->-<->-<->- Entered the comparsion space -<->-<->-<->-<->\n");
@@ -710,11 +710,6 @@ int write_public_key(char* ptr){
 }
 
 
-
-
-
-
-
 static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size){
 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
  
@@ -788,6 +783,33 @@ static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size){
 }
 
 
+// static ulong rk3399_saradc_get_clk(struct rk3399_cru *cru)
+// {
+// 	u32 div, val;
+
+// 	val = readl(&cru->clksel_con[26]);
+// 	div = bitfield_extract(val, CLK_SARADC_DIV_CON_SHIFT,
+// 			       CLK_SARADC_DIV_CON_WIDTH);
+
+// 	return DIV_TO_RATE(OSC_HZ, div);
+// }
+
+
+// static ulong rk3399_saradc_set_clk(struct rk3399_cru *cru, uint hz)
+// {
+// 	int src_clk_div;
+
+// 	src_clk_div = DIV_ROUND_UP(OSC_HZ, hz) - 1;
+// 	assert(src_clk_div <= 255);
+
+// 	rk_clrsetreg(&cru->clksel_con[26],
+// 		     CLK_SARADC_DIV_CON_MASK,
+// 		     src_clk_div << CLK_SARADC_DIV_CON_SHIFT);
+
+// 	return rk3399_saradc_get_clk(cru);
+// }
+
+
 static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size){
 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
  
@@ -819,20 +841,29 @@ static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size)
 	&efuse->ctrl);
 
 	printf("current status during efuse read is 0x%08x\n",(efuse->ctrl));
-
+	//efuse->strobe_finish_ctrl=0;
 	addr=19;
 	// addr tried -> 1) 30, 2) 10  3) 10 4) 11 5) 12 6) 13 7) 14 8) 15 9) 18 10) 20
+	struct rk3399_cru* cru=rockchip_get_cru();
+	
+	if(cru==NULL){
+		printf("cru is NULL\n");
+	}	
 
-	udelay(15);
-	setbits_8((volatile unsigned char*)&efuse->ctrl,
-	RK3399_STROBE | (addr << RK3399_A_SHIFT));
-	udelay(20);
-	writeb(out_value,(volatile unsigned char*)&efuse->dout2);
-	udelay(20);
-	clrbits_le32(&efuse->ctrl, RK3399_STROBE);
-	udelay(20);
-	printf("[ addr = %d, out_value = 0x%x \n ",addr,out_value);
+	ulong cru_clk=rk3399_saradc_get_clk(cru);
+	printf("the cru is %lu \n",cru_clk);
+	
+	for(int i=0;i<32;i++){
+		setbits_le32(&efuse->ctrl,
+		RK3399_STROBE | (addr << RK3399_A_SHIFT << i));
+		udelay(13);
+		//writeb(out_value,(volatile unsigned char*)&efuse->dout2);
+		//udelay(20);
+		clrbits_le32(&efuse->ctrl, RK3399_STROBE);
+		//udelay(20);
+		printf("[ addr = %d, out_value = 0x%x \n ",addr,out_value);
  
+	}
 	/* Switch to standby mode */
 	writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
 	udelay(10);

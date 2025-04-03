@@ -4,7 +4,6 @@
  *
  * SPDX-License-Identifier:	GPL-2.0
  */
-
 #include <common.h>
 #include <clk-uclass.h>
 #include <dm.h>
@@ -19,6 +18,7 @@
 #include <asm/arch/hardware.h>
 #include <dm/lists.h>
 #include <dt-bindings/clock/rk3399-cru.h>
+
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -955,7 +955,7 @@ static ulong rk3399_ddr_set_clk(struct rk3399_cru *cru,
 	return set_rate;
 }
 
-static ulong rk3399_saradc_get_clk(struct rk3399_cru *cru)
+ulong rk3399_saradc_get_clk(struct rk3399_cru *cru)
 {
 	u32 div, val;
 
@@ -966,7 +966,7 @@ static ulong rk3399_saradc_get_clk(struct rk3399_cru *cru)
 	return DIV_TO_RATE(OSC_HZ, div);
 }
 
-static ulong rk3399_saradc_set_clk(struct rk3399_cru *cru, uint hz)
+ulong rk3399_saradc_set_clk(struct rk3399_cru *cru, uint hz)
 {
 	int src_clk_div;
 
