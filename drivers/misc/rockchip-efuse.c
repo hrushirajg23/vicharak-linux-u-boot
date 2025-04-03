@@ -231,55 +231,6 @@ static int rockchip_rk3368_efuse_read(struct udevice *dev, int offset,
 
 
 
-// static int rockchip_rk3399_efuse_write(struct udevice *dev, int offset,const void *buf, int size){	
-
-// 	printf("inside efuse-write function\n");
-// 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
-// 	struct rockchip_efuse_regs *efuse =(struct rockchip_efuse_regs *)plat->base;
-	
-
-// 	unsigned int addr_start, addr_end, addr_offset;
-// 	//u32 out_value;
-// 	u8  bytes[RK3399_NFUSES * RK3399_BYTES_PER_FUSE];
-// 	int i = 0;
-// 	u32 addr;
-
-// 	addr_start = offset / RK3399_BYTES_PER_FUSE;
-// 	addr_offset = offset % RK3399_BYTES_PER_FUSE;
-// 	addr_end = DIV_ROUND_UP(offset + size, RK3399_BYTES_PER_FUSE);
-
-// 	/* cap to the size of the efuse block */
-// 	if (addr_end > RK3399_NFUSES)
-// 		addr_end = RK3399_NFUSES;
-
-
-// 	writel(RK3399_STROBE | RK3399_PGENB |RK3399_PS | RK3399_STROBSFTSEL | RK3399_RSB ,
-// 		&efuse->ctrl);
-   	
-// 	udelay(1);
-	
-// 	for (addr = addr_start; addr < addr_end; addr++) {
-// 		setbits_le32(&efuse->ctrl,
-// 			     RK3399_STROBE | (addr << RK3399_A_SHIFT));
-// 		udelay(1);
-// 		writel(*((const u8 *)buf+i),&efuse->dout);
-// 		clrbits_le32(&efuse->ctrl, RK3399_STROBE);
-// 		udelay(1);
-
-// 		memcpy(&bytes, &efuse->dout, RK3399_BYTES_PER_FUSE);
-// 		i += RK3399_BYTES_PER_FUSE;
-// 	}
-
-// 	/* Switch to standby mode */
-// 	writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
-
-// 	printf("addr offset is %u\n",addr_offset);
-// 	//memcpy(bytes + addr_offset,buf, size);
-
-// 	return 0;
-	
-// }
-
 static int rockchip_rk3399_efuse_read(struct udevice *dev, int offset,void *buf, int size){
 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
 	struct rockchip_efuse_regs *efuse =
@@ -476,21 +427,6 @@ static int rockchip_efuse_read(struct udevice *dev, int offset,
 	return (*efuse_read)(dev, offset, buf, size);
 }
 
-// static int rockchip_efuse_write(struct udevice *dev, int offset,
-// 	const void *buf, int size)
-// {
-// 	EFUSE_WRITE efuse_write = NULL;
-// 	//struct efuse_rw_data* rw_data=NULL;
-// 	// rw_data= (struct efuse_rw_data*)dev_get_driver_data(dev);
-// 	// if(!rw_data || !rw_data->write_ptr)
-// 	// 	return -ENOSYS;
-// 	// efuse_write=rw_data->write_ptr;
-// 	efuse_write = (EFUSE_WRITE)dev_get_driver_data(dev);
-// 	if (!efuse_write)
-// 		return -ENOSYS;
-
-// 	return (*efuse_write)(dev, offset, buf, size);
-// }
 
 static int rockchip_efuse_capatiblity(struct udevice *dev, u32 *buf)
 {
