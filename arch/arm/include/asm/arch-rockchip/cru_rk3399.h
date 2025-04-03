@@ -134,4 +134,7 @@ struct rk3399_clk_info {
 	bool is_cru;
 };
 
+ulong rk3399_saradc_set_clk(struct rk3399_cru *cru, uint hz);
+ulong rk3399_saradc_get_clk(struct rk3399_cru *cru);
+
 #endif	/* __ASM_ARCH_CRU_RK3399_H_ */

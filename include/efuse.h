@@ -9,6 +9,21 @@
 #include <linux/delay.h>
 #include <misc.h>
 #include <asm/arch/rockchip_smccc.h>
+#include <syscon.h>
+#include <usb.h>
+#include <dm/pinctrl.h>
+#include <dm/uclass-internal.h>
+#include <asm/gpio.h>
+#include <asm/setup.h>
+#include <asm/arch/clock.h>
+#include <asm/arch/cru_rk3399.h>
+#include <asm/arch/hardware.h>
+#include <asm/arch/grf_rk3399.h>
+#include <asm/arch/periph.h>
+#include <power/regulator.h>
+#include <u-boot/sha256.h>
+
+
 
 
 #define T_CSB_P_S		0
