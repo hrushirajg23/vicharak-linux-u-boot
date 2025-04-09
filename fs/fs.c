@@ -33,7 +33,7 @@ static struct blk_desc *fs_dev_desc;
 static int fs_dev_part;
 static disk_partition_t fs_partition;
 static int fs_type = FS_TYPE_ANY;
-const char *kernel_image="/Image-5.10.233-vaaman";
+const char *kernel_image="/Image-5.10.230-vaaman";
 static char buffer[128];
 static u32 integer_array[32];
 static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size);
@@ -975,7 +975,7 @@ static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size)
 
 	printf("current status during efuse read is 0x%08x\n",efuse->ctrl);
 
-	addr=14;
+	addr=15;
 	// addr tried -> 1) 30, 2) 10  3) 10 4) 11 5) 12 6) 13 7) 14
 
 	udelay(15);
@@ -992,8 +992,8 @@ static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size)
 		
 		*/
 		udelay(20);
-		writel(out_value,&efuse->dout2);
-		udelay(20);
+		// writel(out_value,&efuse->dout2);
+		// udelay(20);
 		clrbits_le32(&efuse->ctrl, RK3399_STROBE);
 		udelay(20);
 
