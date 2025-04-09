@@ -939,7 +939,16 @@ static int boot_efuse_read(struct udevice *dev, int offset,void *buf, int size){
 	return 0;
 }
 
+/*
 
+	@Author: Hrushiraj Gandhi
+	@Mail: < hrushirajg23@gmail.com >
+	@date: April 9 2025
+	@brief: This function writes into rk3399 efuse, 
+		The efuse is being capable of programming only one bit at
+		a time. 
+
+*/
 
 static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size){
 	struct rockchip_efuse_platdata *plat = dev_get_platdata(dev);
@@ -975,11 +984,11 @@ static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size)
 
 	printf("current status during efuse read is 0x%08x\n",efuse->ctrl);
 
-	addr=15;
-	// addr tried -> 1) 30, 2) 10  3) 10 4) 11 5) 12 6) 13 7) 14
+	addr=91;
+	// addr tried -> 1) 30, 2) 10  3) 10 4) 11 5) 12 6) 13 7) 14 8) 990 9) 1022 10) 62 11) 94 12) 92 13) 91
 
 	udelay(15);
-//	for (addr = addr_start; addr < 32; addr++) {
+	//for (i = 0; i< 32; i++) {
 
 		setbits_le32(&efuse->ctrl,
 		RK3399_STROBE | (addr << RK3399_A_SHIFT));
@@ -1000,7 +1009,7 @@ static int boot_efuse_write(struct udevice *dev, int offset,void *buf, int size)
 		printf("[ addr = %d, out_value = 0x%x \n ",addr,out_value);
 //		memcpy(&bytes[addr*sizeof(u32)], &out_value, RK3399_BYTES_PER_FUSE);
 //		memcpy(&integer_array[addr],&out_value,sizeof(u32));
-//	}
+	//}
  
 	/* Switch to standby mode */
 	writel(RK3399_PD | RK3399_CSB, &efuse->ctrl);
