@@ -8,6 +8,10 @@
 A script to decode bl31.elf to binary
 """
 
+import common.clients
+import common.http_session
+import common.transport
+import common.session
 import os
 import sys
 import getopt
