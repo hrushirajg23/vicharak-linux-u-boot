@@ -591,7 +591,11 @@ static int spinand_mtd_read(struct mtd_info *mtd, loff_t from,
 	bool enable_ecc = false;
 	bool ecc_failed = false;
 	int ret = 0;
-	bool cont_real = spinand->support_cont_read;
+
+	if (spinand->support_cont_read && (from & mtd->writesize_mask)) {
+		printf("spinand cont read at unaligned offset %llx %x\n", from, mtd->writesize_mask);
+		return -EINVAL;
+	}
 
 	if (ops->mode != MTD_OPS_RAW && spinand->eccinfo.ooblayout)
 		enable_ecc = true;
@@ -608,12 +612,6 @@ static int spinand_mtd_read(struct mtd_info *mtd, loff_t from,
 		ret = spinand_ecc_enable(spinand, enable_ecc);
 		if (ret)
 			break;
-
-		/* For misaligned situations, temporarily disable the cont read capability */
-		if (iter.req.dataoffs)
-			spinand->support_cont_read = false;
-		else
-			spinand->support_cont_read = cont_real;
 
 		if (spinand->support_cont_read) {
 			iter.req.datalen = ops->len;
@@ -647,8 +645,6 @@ static int spinand_mtd_read(struct mtd_info *mtd, loff_t from,
 #endif
 	if (ecc_failed && !ret)
 		ret = -EBADMSG;
-
-	spinand->support_cont_read = cont_real;
 
 	return ret ? ret : max_bitflips;
 }

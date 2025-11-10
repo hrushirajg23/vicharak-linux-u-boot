@@ -491,29 +491,51 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 		struct spi_slave *spi = spinand->slave;
 		size_t retlen_nand;
 
-		if (desc->op_flag == BLK_PRE_RW) {
-			spi->mode |= SPI_DMA_PREPARE;
-			ret = mtd_read(mtd, off, rwsize,
-				       &retlen_nand, (u_char *)(dst));
-			spi->mode &= ~SPI_DMA_PREPARE;
-			if (retlen_nand == rwsize)
-				ret = blkcnt;
-		} else {
-			if (spinand->support_cont_read) {
+		if (spinand->support_cont_read) {
+			if (off & mtd->writesize_mask) {
+				u8 *temp_buf = malloc(mtd->writesize);
+				loff_t off_in_page = off & mtd->writesize_mask;
+				size_t left_in_page = mtd->writesize - off_in_page;
+
+				if (!temp_buf) {
+					printf("Fail to malloc temp_buf\n");
+					return ret;
+				}
+				ret = mtd_read(mtd, off - off_in_page, mtd->writesize,
+					       &retlen_nand,
+					       temp_buf);
+				if (ret && ret != -EUCLEAN) {
+					printf("Fail to read data from nand, ret = %d\n", ret);
+					free(temp_buf);
+					return ret;
+				}
+				memcpy(dst, temp_buf + off_in_page, left_in_page);
+				free(temp_buf);
+
+				if (desc->op_flag == BLK_PRE_RW)
+					spi->mode |= SPI_DMA_PREPARE;
+				ret = mtd_read(mtd, off + left_in_page, rwsize - left_in_page,
+					       &retlen_nand,
+					       (u_char *)(dst + left_in_page));
+				spi->mode &= ~SPI_DMA_PREPARE;
+			} else {
+				if (desc->op_flag == BLK_PRE_RW)
+					spi->mode |= SPI_DMA_PREPARE;
 				ret = mtd_read(mtd, off, rwsize,
 					       &retlen_nand,
 					       (u_char *)(dst));
-				/* ECC reach threshold but data is valid */
-				if (ret == -EUCLEAN)
-					ret = 0;
-			} else {
-				ret = mtd_map_read(mtd, off, &rwsize,
-						   NULL, mtd->size,
-						   (u_char *)(dst));
+				spi->mode &= ~SPI_DMA_PREPARE;
 			}
-			if (!ret)
-				ret = blkcnt;
+			/* ECC reach threshold but data is valid */
+			if (ret == -EUCLEAN)
+				ret = 0;
+		} else {
+			ret = mtd_map_read(mtd, off, &rwsize,
+					   NULL, mtd->size,
+						(u_char *)(dst));
 		}
+		if (!ret)
+			ret = blkcnt;
 #endif
 	} else if (desc->devnum == BLK_MTD_SPI_NOR) {
 #if defined(CONFIG_SPI_FLASH_MTD) || defined(CONFIG_SPL_BUILD)
