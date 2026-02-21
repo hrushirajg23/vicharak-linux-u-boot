@@ -15,12 +15,12 @@ endif
 
 DATE := $(shell date +%Y%m%d)
 
-BOARD ?= rk3399-vaaman
+BOARD ?= rk3576-axon-lite
 
 ${BOARD}:
-	@mkdir -p debian/build/$@
+	mkdir -p debian/build/$@
 
-	@if [ "${BOARD}" = "rk3588-axon" ]; then \
+	@if [ "${BOARD}" = "rk3588-axon" || "${BOARD}" = "rk3576-axon-lite" ]; then \
 		./make.sh ${BOARD} --spl; \
 	else \
 		./make.sh ${BOARD}; \
