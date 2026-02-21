@@ -12,6 +12,28 @@ config SYS_SOC
 config SYS_MALLOC_F_LEN
 	default 0x400
 
+config TARGET_RK3576_AXON_LITE
+	bool "Vicharak RK3576 Axon Lite board"
+	select BOARD_LATE_INIT
+	help
+	  The Axon Lite is a Single Board Computer (SBC) designed by Vicharak,
+	  which is powered by the RK3576 processor.
+
+	  The board features a dual-channel DDR4 RAM configuration
+	  with a total capacity of 8GB, as well as storage options
+	  including SATA, NVMe, eMMC, and SDMMC.
+
+	  Other notable features include a 1GBps LAN connection,
+	  RTL8852BS-based WiFi and Bluetooth module,
+	  ES8388 Audio codec support, MIPI CSI RX x 2,
+	  MIPI DCPHY RX x 2, MIPI DCPHY TX x 2 and 2 x PCIe 2.0 
+
+	  The Axon also includes a variety of header pins
+	  for UART, I2C, SPI, and SARADC connectivity,
+	  as well as micro HDMI ports and
+	  1 x USB Type-C connector for power delivery and 1 x 3.1 USB and DP.
+
 source board/rockchip/evb_rk3576/Kconfig
+source board/vicharak/rk3576_axon/Kconfig
 
 endif
