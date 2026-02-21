@@ -33,7 +33,6 @@ config TARGET_RK3576_AXON_LITE
 	  as well as micro HDMI ports and
 	  1 x USB Type-C connector for power delivery and 1 x 3.1 USB and DP.
 
-source board/rockchip/evb_rk3576/Kconfig
-source board/vicharak/rk3576_axon/Kconfig
+source board/vicharak/rk3576_axon_lite/Kconfig
 
 endif
