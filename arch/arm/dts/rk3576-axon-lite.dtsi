@@ -1,0 +1,115 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2024 Rockchip Electronics Co., Ltd.
+ * Copyright (c) 2026 Vicharak Computers LLP
+ */
+
+/dts-v1/;
+#include "rk3576.dtsi"
+#include "rk3576-u-boot.dtsi"
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "AXON LITE";
+	compatible = "vicharak,axon-lite", "rockchip,rk3576";
+
+    vcc3v3_pcie0: vcc3v3-pcie0 {
+        compatible = "regulator-fixed";
+        regulator-name = "vcc3v3_pcie0";
+        regulator-min-microvolt = <3300000>;
+        regulator-max-microvolt = <3300000>;
+        enable-active-high;
+        gpios = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;
+        startup-delay-us = <5000>;
+        regulator-boot-on;
+        regulator-always-on;
+    };
+
+    vcc3v3_pcie1: vcc3v3-pcie1 {
+        compatible = "regulator-fixed";
+        regulator-name = "vcc3v3_pcie1";
+        regulator-min-microvolt = <3300000>;
+        regulator-max-microvolt = <3300000>;
+        enable-active-high;
+        gpios = <&gpio4 RK_PB0 GPIO_ACTIVE_HIGH>;
+        startup-delay-us = <5000>;
+        regulator-boot-on;
+        regulator-always-on;
+    };
+
+
+	/* user_led: user-led { */
+	/* 	u-boot,dm-pre-reloc; */
+	/* 	compatible = "regulator-fixed"; */
+	/* 	regulator-name = "use_led"; */
+	/* 	enable-active-high; */
+	/* 	gpio = <&gpio0 RK_PC4 GPIO_ACTIVE_HIGH>; */
+	/* 	regulator-boot-on; */
+	/* 	regulator-always-on; */
+	/* }; */
+
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 1>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		u-boot,dm-pre-reloc;
+		status = "okay";
+
+		volumeup-key {
+			u-boot,dm-pre-reloc;
+			linux,code = <KEY_VOLUMEUP>;
+			label = "volume up";
+			press-threshold-microvolt = <1750>;
+		};
+	};
+};
+
+&combphy0_ps {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&combphy1_psu {
+        status = "okay";
+};
+
+&pcie0 {
+	u-boot,dm-pre-reloc;
+	reset-gpios = <&gpio2 RK_PB4 GPIO_ACTIVE_HIGH>;
+	rockchip,skip-scan-in-resume;
+	vpcie3v3-supply = <&vcc3v3_pcie0>;
+	status = "okay";
+};
+
+&pcie0_intc {
+	u-boot,dm-pre-reloc;
+};
+
+&pcie1 {
+        u-boot,dm-pre-reloc;
+        reset-gpios = <&gpio2 RK_PB1 GPIO_ACTIVE_HIGH>;
+        rockchip,skip-scan-in-resume;
+        vpcie3v3-supply = <&vcc3v3_pcie1>;
+        status = "okay";
+};
+
+&pcie1_intc {
+	u-boot,dm-pre-reloc;
+};
+
+&pinctrl {
+	u-boot,dm-pre-reloc;
+    pcie0 {
+            pcie0_rst: pcie0-rst {
+                    rockchip,pins =
+                            <2 RK_PB4 RK_FUNC_GPIO &pcfg_pull_none>;
+            };
+    };
+    pcie1 {
+            pcie1_rst: pcie1-rst {
+                    rockchip,pins =
+                            <2 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
+            };
+    };
+};
