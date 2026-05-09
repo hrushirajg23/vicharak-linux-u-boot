@@ -1,0 +1,5 @@
+VICHARAK-AXON-LITE
+M:	Hrushiraj Gandhi <hrushirajg23@gmail.com>
+S:	Maintained
+F:	configs/rk3576-axon-lite_defconfig
+F:	arch/arm/dts/rk3576-axon-lite-u-boot.dtsi
