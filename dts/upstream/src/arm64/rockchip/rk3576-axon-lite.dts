@@ -19,8 +19,8 @@
 
 	aliases {
 		ethernet0 = &gmac0;
-		mmc0 = &sdmmc;
-        mmc1 = &sdhci;
+        mmc0 = &sdhci;
+		mmc1 = &sdmmc;
 	};
 
 	chosen {
@@ -772,7 +772,7 @@
 	no-sdio;
 	no-mmc;
 	sd-uhs-sdr104;
-	/* vmmc-supply = <&vcc_3v3_s0>; */
+	vmmc-supply = <&vcc_3v3_sd>;
 	vqmmc-supply = <&vccio_sd_s0>;
 	status = "okay";
 };
@@ -783,9 +783,11 @@
 	no-sd;
 	non-removable;
 	max-frequency = <200000000>;
-	mmc-hs400-1_8v;
-	mmc-hs400-enhanced-strobe;
+	/* mmc-hs400-1_8v; */
+	/* mmc-hs400-enhanced-strobe; */
 	full-pwr-cycle-in-suspend;
+	vmmc-supply = <&vcc_3v3_s3>;
+	vqmmc-supply = <&vcc_1v8_s3>;
 	status = "okay";
 };
 

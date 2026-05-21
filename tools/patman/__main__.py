@@ -6,6 +6,10 @@
 
 """See README for more information"""
 
+import common.clients
+import common.http_session
+import common.transport
+import common.session
 import os
 import sys
 
