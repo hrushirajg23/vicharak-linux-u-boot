@@ -19,3 +19,26 @@
 	mmc-hs200-1_8v;
 };
 
+&i2c4 {
+	bootph-all;
+	pmic@23 {
+		bootph-all;
+	};
+};
+
+&vcc_3v3_sd {
+	bootph-all;
+};
+
+&vcc_3v3_s3 {
+	bootph-all;
+};
+
+&vcc_1v8_s3 {
+	bootph-all;
+};
+
+&vccio_sd_s0 {
+	bootph-all;
+};
+
