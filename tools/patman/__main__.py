@@ -6,6 +6,7 @@
 
 """See README for more information"""
 
+import common.session
 import os
 import sys
 
