@@ -6,6 +6,8 @@
 
 """See README for more information"""
 
+import common.transport
+import common.session
 import os
 import sys
 
