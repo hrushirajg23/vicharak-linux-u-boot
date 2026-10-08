@@ -59,8 +59,8 @@
 		regulator-name = "vcc20v_dcin";
 		regulator-always-on;
 		regulator-boot-on;
-		regulator-min-microvolt = <12000000>;
-		regulator-max-microvolt = <12000000>;
+		regulator-min-microvolt = <20000000>;
+		regulator-max-microvolt = <20000000>;
 	};
 
 	vcc0_5v0: vcc5v0_sys: vcc0-5v0-regulator {
