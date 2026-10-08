@@ -20,7 +20,8 @@ BOARD ?= rk3399-vaaman
 ${BOARD}:
 	@mkdir -p debian/build/$@
 
-	@if [[ "${BOARD}" = "rk3588-axon" || "${BOARD}" = "rk3588-axon-cm-evb1" ]]; then \
+
+	@if [ "${BOARD}" = "rk3588-axon" ] || "${BOARD}" = "rk3588-axon-cm-evb1" || [ "${BOARD}" = "rk3588-vaaman2" ]; then \
 		./make.sh ${BOARD} --spl; \
 	else \
 		./make.sh ${BOARD}; \
