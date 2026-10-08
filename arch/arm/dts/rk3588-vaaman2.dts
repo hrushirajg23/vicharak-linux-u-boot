@@ -53,25 +53,34 @@
 	// End of ADC Keys }}}
 
 	// Regulators: {{{
-	vcc12v_dcin: vcc12v-dcin {
+	vcc20v_dcin: vcc20v-dcin {
 		u-boot,dm-pre-reloc;
 		compatible = "regulator-fixed";
-		regulator-name = "vcc12v_dcin";
+		regulator-name = "vcc20v_dcin";
 		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <12000000>;
 		regulator-max-microvolt = <12000000>;
 	};
 
-	vcc5v0_sys: vcc5v0-sys {
-		u-boot,dm-pre-reloc;
+	vcc0_5v0: vcc5v0_sys: vcc0-5v0-regulator {
 		compatible = "regulator-fixed";
-		regulator-name = "vcc5v0_sys";
+		regulator-name = "vcc0_5v0";
 		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		vin-supply = <&vcc12v_dcin>;
+		vin-supply = <&vcc20v_dcin>;
+	};
+
+	vcc1_5v0: vcc1-5v0-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc1_5v0";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		vin-supply = <&vcc20v_dcin>;
 	};
 
 	vcc3v3_pcie3x4: vcc3v3-pcie3x4 {
@@ -85,41 +94,39 @@
 		enable-active-high;
 		gpio = <&gpio3 RK_PC0 GPIO_ACTIVE_HIGH>;
 		//startup-delay-us = <5000>;
-		vin-supply = <&vcc12v_dcin>;
+		vin-supply = <&vcc20v_dcin>;
 	};
 
-	vcc5v0_typec1: vcc5v0-typec1-regulator {
-		u-boot,dm-pre-reloc;
+	vbus5v0_typec0: vbus5v0-typec0-regulator {
 		compatible = "regulator-fixed";
-		regulator-name = "vcc5v0_typec1";
+		regulator-name = "vbus5v0_typec0";
+		regulator-boot-on;
+		enable-active-high;
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		enable-active-high;
-		gpio = <&pca9554 1 GPIO_ACTIVE_HIGH>;
-		vin-supply = <&vcc5v0_sys>;
-	};
-
-	vcc5v0_typec0: vcc5v0-typec0-regulator {
-		u-boot,dm-pre-reloc;
-		compatible = "regulator-fixed";
-		regulator-name = "vcc5v0_typec0";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		enable-active-high;
 		gpio = <&pca9554 0 GPIO_ACTIVE_HIGH>;
-		vin-supply = <&vcc5v0_sys>;
+		vin-supply = <&vcc1_5v0>;
 	};
 
-	vcc3v3_pca9554: vcc3v3-pca9554 {
-		u-boot,dm-pre-reloc;
+	vbus5v0_typec1: vbus5v0-typec1-regulator {
 		compatible = "regulator-fixed";
-		regulator-name = "vcc3v3_pca9554";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
+		regulator-name = "vbus5v0_typec1";
+		regulator-boot-on;
+		enable-active-high;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&pca9554 1 GPIO_ACTIVE_HIGH>;
+		vin-supply = <&vcc1_5v0>;
+	};
+
+	vcc3v3_io_expander: vcc3v3-io-expander {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc3v3_io_expander";
 		regulator-boot-on;
 		regulator-always-on;
 		enable-active-high;
-		vin-supply = <&vcc5v0_sys>;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
 	};
 	// End of Regulators }}}
 
@@ -153,7 +160,7 @@
 		u-boot,dm-pre-reloc;
 		compatible = "nxp,pca9554";
 		reg = <0x24>;
-		vcc-supply = <&vcc3v3_pca9554>;
+		vcc-supply = <&vcc3v3_io_expander>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		gpio-group-num = <300>;
